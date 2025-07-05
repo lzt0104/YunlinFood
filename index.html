@@ -11,10 +11,10 @@
     <style>
         body {
             font-family: 'Noto Sans TC', sans-serif;
-            touch-action: manipulation; /* Prevent zoom on double tap on mobile */
+            touch-action: manipulation; /* 防止在行動裝置上雙擊縮放 */
         }
         canvas {
-            -webkit-tap-highlight-color: transparent;
+            -webkit-tap-highlight-color: transparent; /* 移除點擊時的藍色反白 */
         }
         .spin-button {
             transition: transform 0.1s ease, box-shadow 0.1s ease;
@@ -28,8 +28,8 @@
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen flex flex-col items-center justify-center p-4">
 
     <div class="w-full max-w-2xl text-center">
-        <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-2">美食天降轉盤</h1>
-        <p class="text-lg text-gray-600 dark:text-gray-400 mb-6">解決你的選擇困難症！</p>
+        <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-2">美食天降轉盤</h1>
+        <p class="text-md sm:text-lg text-gray-600 dark:text-gray-400 mb-6">解決你的選擇困難症！</p>
 
         <div class="mb-6">
             <label for="category-select" class="sr-only">選擇美食分類</label>
@@ -39,16 +39,16 @@
         </div>
 
         <div class="relative w-full max-w-md mx-auto aspect-square">
-            <canvas id="wheelCanvas" class="w-full h-full"></canvas>
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 flex items-center justify-center">
+            <canvas id="wheelCanvas"></canvas>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
                  <button id="spinButton" class="spin-button w-20 h-20 bg-blue-600 dark:bg-blue-500 text-white font-bold text-2xl rounded-full shadow-lg border-4 border-white dark:border-gray-800 focus:outline-none">轉！</button>
             </div>
             <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2/3" style="width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 30px solid #f59e0b;"></div>
         </div>
 
         <div id="result" class="mt-8 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg min-h-[150px] flex flex-col items-center justify-center transition-opacity duration-500 opacity-0">
-            <h2 id="result-name" class="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400"></h2>
-            <p id="result-description" class="mt-2 text-base md:text-lg text-gray-600 dark:text-gray-300"></p>
+            <h2 id="result-name" class="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400 text-center"></h2>
+            <p id="result-description" class="mt-2 text-base md:text-lg text-gray-600 dark:text-gray-300 text-center"></p>
             <a id="result-link" href="#" target="_blank" rel="noopener noreferrer" class="mt-4 inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition-colors duration-300 hidden">
                 📍 前往地圖
             </a>
@@ -252,7 +252,6 @@
         const resultLink = document.getElementById('result-link');
         
         let options = [];
-        let startAngle = 0;
         let arc;
         let spinTimeout = null;
         let spinAngleStart;
@@ -280,40 +279,79 @@
             if (selectedCategory === 'all') {
                 options = Object.values(foodData).flat();
             } else {
-                options = foodData[selectedCategory];
+                options = foodData[selectedCategory] || [];
             }
-            arc = 2 * Math.PI / (options.length || 1);
+            arc = options.length > 0 ? 2 * Math.PI / options.length : 0;
+            currentAngle = 0;
             drawRouletteWheel();
         }
 
-        // 繪製轉盤
+        // 繪製轉盤 (RWD 優化)
         function drawRouletteWheel() {
-            const outsideRadius = canvas.width / 2 * 0.9;
-            const textRadius = outsideRadius * 0.65;
-            const insideRadius = outsideRadius * 0.1;
+            // 使用 CSS 像素大小，確保繪圖邏輯與顯示大小一致
+            const logicalWidth = canvas.clientWidth;
+            const logicalHeight = canvas.clientHeight;
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.strokeStyle = 'white';
+            const centerX = logicalWidth / 2;
+            const centerY = logicalHeight / 2;
+            const outsideRadius = logicalWidth / 2 * 0.9;
+            const textRadius = outsideRadius * 0.65;
+
+            // 清除畫布
+            ctx.clearRect(0, 0, logicalWidth, logicalHeight);
+            
+            // 處理沒有選項的情況
+            if (!options || options.length === 0) {
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#6B7280'; // gray-500
+                let fontSize = Math.max(12, Math.floor(logicalWidth / 20));
+                ctx.font = `bold ${fontSize}px "Noto Sans TC", sans-serif`;
+                ctx.fillText('此分類無店家', centerX, centerY);
+                ctx.restore();
+                spinButton.disabled = true;
+                spinButton.classList.add('opacity-50', 'cursor-not-allowed');
+                return;
+            } else {
+                spinButton.disabled = isSpinning;
+                if (!isSpinning) {
+                    spinButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+
+            ctx.strokeStyle = '#FFFFFF';
             ctx.lineWidth = 2;
-            ctx.font = 'bold 14px "Noto Sans TC", sans-serif';
+            
+            // 動態調整字體大小
+            let fontSize = Math.max(10, Math.floor(logicalWidth / 30));
+            ctx.font = `bold ${fontSize}px "Noto Sans TC", sans-serif`;
 
             for (let i = 0; i < options.length; i++) {
                 const angle = currentAngle + i * arc;
                 ctx.fillStyle = colors[i % colors.length];
 
+                // 繪製扇形
                 ctx.beginPath();
-                ctx.arc(canvas.width / 2, canvas.height / 2, outsideRadius, angle, angle + arc, false);
-                ctx.arc(canvas.width / 2, canvas.height / 2, insideRadius, angle + arc, angle, true);
-                ctx.stroke();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, outsideRadius, angle, angle + arc, false);
+                ctx.closePath();
                 ctx.fill();
+                ctx.stroke();
 
+                // 繪製文字
                 ctx.save();
                 ctx.fillStyle = "white";
-                ctx.translate(canvas.width / 2 + Math.cos(angle + arc / 2) * textRadius,
-                              canvas.height / 2 + Math.sin(angle + arc / 2) * textRadius);
+                ctx.translate(centerX + Math.cos(angle + arc / 2) * textRadius,
+                              centerY + Math.sin(angle + arc / 2) * textRadius);
                 ctx.rotate(angle + arc / 2 + Math.PI / 2);
-                const text = options[i].name;
-                ctx.fillText(text, -ctx.measureText(text).width / 2, 0);
+                
+                let text = options[i].name;
+                // 在小螢幕上縮短過長的文字
+                if (text.length > 6 && logicalWidth < 400) {
+                    text = text.substring(0, 5) + '…';
+                }
+                
+                ctx.fillText(text, -ctx.measureText(text).width / 2, fontSize / 2);
                 ctx.restore();
             }
         }
@@ -326,10 +364,9 @@
             spinButton.classList.add('opacity-50', 'cursor-not-allowed');
             resultDiv.style.opacity = 0;
 
-
-            spinAngleStart = Math.random() * 10 + 10; // 初始速度
+            spinAngleStart = Math.random() * 10 + 10;
             spinTime = 0;
-            spinTimeTotal = Math.random() * 3000 + 4000; // 旋轉時間
+            spinTimeTotal = Math.random() * 3000 + 4000;
             rotateWheel();
         }
 
@@ -343,16 +380,15 @@
             const spinAngle = spinAngleStart - easeOut(spinTime, 0, spinAngleStart, spinTimeTotal);
             currentAngle += (spinAngle * Math.PI / 180);
             drawRouletteWheel();
-            spinTimeout = setTimeout(rotateWheel, 30);
+            spinTimeout = requestAnimationFrame(rotateWheel);
         }
 
         // 停止轉動
         function stopRotateWheel() {
-            clearTimeout(spinTimeout);
+            cancelAnimationFrame(spinTimeout);
             const degrees = currentAngle * 180 / Math.PI + 90;
             const arcd = arc * 180 / Math.PI;
             const index = Math.floor((360 - degrees % 360) / arcd);
-            ctx.save();
             
             const selected = options[index];
             
@@ -365,7 +401,6 @@
             isSpinning = false;
             spinButton.disabled = false;
             spinButton.classList.remove('opacity-50', 'cursor-not-allowed');
-            ctx.restore();
         }
 
         // 緩動函式
@@ -375,19 +410,27 @@
             return b + c * (tc + -3 * ts + 3 * t);
         }
         
-        // 設定 Canvas 尺寸
+        // 設定 Canvas 尺寸 (RWD 優化)
         function resizeCanvas() {
             const container = canvas.parentElement;
-            const size = Math.min(container.clientWidth, container.clientHeight);
-            canvas.width = size;
-            canvas.height = size;
-            // 確保高DPI螢幕的清晰度
+            // 讓 canvas 的邏輯尺寸等於其父容器的顯示尺寸
+            const size = container.clientWidth;
+            
+            // 處理高解析度螢幕 (Retina)
             const dpr = window.devicePixelRatio || 1;
-            canvas.width = size * dpr;
-            canvas.height = size * dpr;
-            ctx.scale(dpr, dpr);
+            
+            // 設定 canvas 的顯示大小 (CSS pixels)
             canvas.style.width = `${size}px`;
             canvas.style.height = `${size}px`;
+            
+            // 設定 canvas 的實際繪圖緩衝區大小
+            canvas.width = size * dpr;
+            canvas.height = size * dpr;
+            
+            // 縮放繪圖環境，讓繪圖指令使用邏輯像素單位
+            ctx.scale(dpr, dpr);
+            
+            // 尺寸改變後重繪轉盤
             drawRouletteWheel();
         }
 
@@ -395,7 +438,6 @@
         spinButton.addEventListener("click", spin);
         categorySelect.addEventListener('change', updateOptions);
         window.addEventListener('resize', resizeCanvas);
-
 
         // 初始化
         populateCategories();
