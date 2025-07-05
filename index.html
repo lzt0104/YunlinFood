@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,21 +12,28 @@
     <style>
         body {
             font-family: 'Noto Sans TC', sans-serif;
-            touch-action: manipulation; /* 防止在行動裝置上雙擊縮放 */
+            touch-action: manipulation;
+            /* 防止在行動裝置上雙擊縮放 */
         }
+
         canvas {
-            -webkit-tap-highlight-color: transparent; /* 移除點擊時的藍色反白 */
+            -webkit-tap-highlight-color: transparent;
+            /* 移除點擊時的藍色反白 */
         }
+
         .spin-button {
             transition: transform 0.1s ease, box-shadow 0.1s ease;
         }
+
         .spin-button:active {
             transform: scale(0.95);
             box-shadow: 0 0 15px rgba(59, 130, 246, 0.7);
         }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen flex flex-col items-center justify-center p-4">
+
+<body
+    class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen flex flex-col items-center justify-center p-4">
 
     <div class="w-full max-w-2xl text-center">
         <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-2">美食天降轉盤</h1>
@@ -33,7 +41,8 @@
 
         <div class="mb-6">
             <label for="category-select" class="sr-only">選擇美食分類</label>
-            <select id="category-select" class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-lg rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3 shadow-md">
+            <select id="category-select"
+                class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-lg rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3 shadow-md">
                 <option value="all">所有美食</option>
             </select>
         </div>
@@ -41,15 +50,22 @@
         <div class="relative w-full max-w-md mx-auto aspect-square">
             <canvas id="wheelCanvas"></canvas>
             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
-                 <button id="spinButton" class="spin-button w-20 h-20 bg-blue-600 dark:bg-blue-500 text-white font-bold text-2xl rounded-full shadow-lg border-4 border-white dark:border-gray-800 focus:outline-none">轉！</button>
+                <button id="spinButton"
+                    class="spin-button w-20 h-20 bg-blue-600 dark:bg-blue-500 text-white font-bold text-2xl rounded-full shadow-lg border-4 border-white dark:border-gray-800 focus:outline-none">轉！</button>
             </div>
-            <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2/3" style="width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 30px solid #f59e0b;"></div>
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2/3"
+                style="width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 30px solid #f59e0b;">
+            </div>
         </div>
 
-        <div id="result" class="mt-8 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg min-h-[150px] flex flex-col items-center justify-center transition-opacity duration-500 opacity-0">
-            <h2 id="result-name" class="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400 text-center"></h2>
-            <p id="result-description" class="mt-2 text-base md:text-lg text-gray-600 dark:text-gray-300 text-center"></p>
-            <a id="result-link" href="#" target="_blank" rel="noopener noreferrer" class="mt-4 inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition-colors duration-300 hidden">
+        <div id="result"
+            class="mt-8 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg min-h-[150px] flex flex-col items-center justify-center transition-opacity duration-500 opacity-0">
+            <h2 id="result-name" class="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400 text-center">
+            </h2>
+            <p id="result-description" class="mt-2 text-base md:text-lg text-gray-600 dark:text-gray-300 text-center">
+            </p>
+            <a id="result-link" href="#" target="_blank" rel="noopener noreferrer"
+                class="mt-4 inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition-colors duration-300 hidden">
                 📍 前往地圖
             </a>
         </div>
@@ -238,6 +254,41 @@
                 { name: '芊品坊', description: '芋頭蛋糕很厲害，也有很多小蛋糕。', url: 'https://maps.app.goo.gl/tMebWoGT3FvsFw1D9' },
                 { name: '多那之', description: '很適合做作業，蛋糕好吃。', url: 'https://maps.app.goo.gl/P6Hc8uww2CMvbxq17' },
                 { name: '塔吉特Touched', description: '千層蛋糕好吃。', url: 'https://maps.app.goo.gl/h8tFZi3uNQkMHatJA' }
+            ],
+            "飲料": [
+                { name: '可不可熟成紅茶 - 斗六民生南店', description: '', url: '' },
+                { name: '麻古茶坊 - 斗六中山店', description: '', url: '' },
+                { name: '五桐號 - 斗六中山店', description: '', url: '' },
+                { name: '迷客夏 - 雲林斗六店', description: '', url: '' },
+                { name: '烏弄原生茶飲 - 斗六中山店', description: '', url: '' },
+                { name: '一沐日 - 斗六中山店', description: '', url: '' },
+                { name: '八曜和茶 - 雲林斗六門市', description: '', url: '' },
+                { name: '得正 - 斗六中山計劃', description: '', url: '' },
+                { name: '清心福全 - 斗六站前店', description: '', url: '' },
+                { name: '50嵐 - 斗六中山店', description: '', url: '' },
+                { name: '老賴茶棧 - 斗六中山店', description: '', url: '' },
+                { name: '一手私藏世界紅茶 - 斗六中山店', description: '', url: '' },
+                { name: '茶湯會 - 斗六中山店', description: '', url: '' },
+                { name: 'COMEBUY - 斗六中山店', description: '', url: '' },
+                { name: '大苑子 - 斗六民生店', description: '', url: '' },
+                { name: '鮮茶道 - 斗六民生店', description: '', url: '' },
+                { name: 'Mr.Wish - 斗六中山店', description: '', url: '' },
+                { name: '三分春色 - 斗六民生店', description: '', url: '' },
+                { name: '陳飲checkin - 斗六店', description: '', url: '' },
+                { name: '大茗本位製茶堂 - 斗六中山店', description: '', url: '' },
+                { name: '春上手作茶飲', description: '', url: '' },
+                { name: '小雀幸Cher Cha', description: '', url: '' },
+                { name: 'UG - 斗六中山店', description: '', url: '' },
+                { name: '茗泰子', description: '', url: '' },
+                { name: '十口茶 - 斗六店', description: '', url: '' },
+                { name: '啵棒珍珠果茶專賣所', description: '', url: '' },
+                { name: '樂。茶坊 - 斗六民生南店', description: '', url: '' },
+                { name: '白巷子 - 斗六中山店', description: '', url: '' },
+                { name: '春涼好茶 - 雲林斗六店', description: '', url: '' },
+                { name: '小金旺茶坊 - 斗六圓環店', description: '', url: '' },
+                { name: '等夏飲料店', description: '', url: '' },
+                { name: '樂法 Le Phare - 斗六店', description: '', url: '' },
+                { name: '軍茶 - 斗六太平店', description: '', url: '' }
             ]
         };
 
@@ -250,7 +301,7 @@
         const resultName = document.getElementById('result-name');
         const resultDescription = document.getElementById('result-description');
         const resultLink = document.getElementById('result-link');
-        
+
         let options = [];
         let arc;
         let spinTimeout = null;
@@ -299,7 +350,7 @@
 
             // 清除畫布
             ctx.clearRect(0, 0, logicalWidth, logicalHeight);
-            
+
             // 處理沒有選項的情況
             if (!options || options.length === 0) {
                 ctx.save();
@@ -321,7 +372,7 @@
 
             ctx.strokeStyle = '#FFFFFF';
             ctx.lineWidth = 2;
-            
+
             // 動態調整字體大小
             let fontSize = Math.max(10, Math.floor(logicalWidth / 30));
             ctx.font = `bold ${fontSize}px "Noto Sans TC", sans-serif`;
@@ -342,15 +393,15 @@
                 ctx.save();
                 ctx.fillStyle = "white";
                 ctx.translate(centerX + Math.cos(angle + arc / 2) * textRadius,
-                              centerY + Math.sin(angle + arc / 2) * textRadius);
+                    centerY + Math.sin(angle + arc / 2) * textRadius);
                 ctx.rotate(angle + arc / 2 + Math.PI / 2);
-                
+
                 let text = options[i].name;
                 // 在小螢幕上縮短過長的文字
                 if (text.length > 6 && logicalWidth < 400) {
                     text = text.substring(0, 5) + '…';
                 }
-                
+
                 ctx.fillText(text, -ctx.measureText(text).width / 2, fontSize / 2);
                 ctx.restore();
             }
@@ -389,9 +440,9 @@
             const degrees = currentAngle * 180 / Math.PI + 90;
             const arcd = arc * 180 / Math.PI;
             const index = Math.floor((360 - degrees % 360) / arcd);
-            
+
             const selected = options[index];
-            
+
             resultName.textContent = selected.name;
             resultDescription.textContent = selected.description;
             resultLink.href = selected.url;
@@ -409,27 +460,27 @@
             const tc = ts * t;
             return b + c * (tc + -3 * ts + 3 * t);
         }
-        
+
         // 設定 Canvas 尺寸 (RWD 優化)
         function resizeCanvas() {
             const container = canvas.parentElement;
             // 讓 canvas 的邏輯尺寸等於其父容器的顯示尺寸
             const size = container.clientWidth;
-            
+
             // 處理高解析度螢幕 (Retina)
             const dpr = window.devicePixelRatio || 1;
-            
+
             // 設定 canvas 的顯示大小 (CSS pixels)
             canvas.style.width = `${size}px`;
             canvas.style.height = `${size}px`;
-            
+
             // 設定 canvas 的實際繪圖緩衝區大小
             canvas.width = size * dpr;
             canvas.height = size * dpr;
-            
+
             // 縮放繪圖環境，讓繪圖指令使用邏輯像素單位
             ctx.scale(dpr, dpr);
-            
+
             // 尺寸改變後重繪轉盤
             drawRouletteWheel();
         }
@@ -449,4 +500,5 @@
 
     </script>
 </body>
+
 </html>
