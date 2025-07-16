@@ -98,28 +98,24 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        console.log("腳本啟動：開始 fetch API 資料...");
+        // 從我們的 API Worker 載入初始資料
         fetch('/api/restaurants')
             .then(response => {
-                console.log("API 回應成功，狀態碼:", response.status);
                 if (!response.ok) {
                     throw new Error(`API 請求失敗！狀態: ${response.status}`);
                 }
-                console.log("準備解析 JSON...");
                 return response.json();
             })
             .then(foodData => {
-                console.log("JSON 解析成功，準備初始化應用程式...");
                 initializeApp(foodData);
             })
             .catch(error => {
-                console.error('流程中斷！無法從 API 載入或解析餐廳資料:', error);
+                console.error('無法從 API 載入餐廳資料:', error);
                 const categoryCheckboxesContainer = document.getElementById('category-checkboxes');
-                categoryCheckboxesContainer.innerHTML = `<p class="col-span-full text-center text-red-500">美食清單載入失敗！<br>請檢查後端 Function 是否已成功部署，或查看 Console 中的錯誤訊息。</p>`;
+                categoryCheckboxesContainer.innerHTML = `<p class="col-span-full text-center text-red-500">美食清單載入失敗！<br>請確認後端 Function 是否已成功部署。</p>`;
             });
 
         function initializeApp(foodData) {
-            console.log("--- initializeApp 開始 ---");
             // --- DOM 元素宣告 ---
             const canvas = document.getElementById('wheelCanvas');
             const ctx = canvas.getContext('2d');
@@ -134,7 +130,6 @@
             const cancelAddBtn = document.getElementById('cancelAddBtn');
             const addRestaurantForm = document.getElementById('addRestaurantForm');
             const restaurantCategorySelect = document.getElementById('restaurantCategory');
-            console.log("1. 所有 DOM 元素宣告完畢");
 
             // --- 應用程式狀態變數 ---
             let options = [];
@@ -147,9 +142,9 @@
             let currentAngle = 0;
             const colors = ["#F87171", "#60A5FA", "#34D399", "#FBBF24", "#A78BFA", "#F472B6", "#FB923C", "#2DD4BF"];
 
-            // --- 函式定義 ---
+            // --- 函式定義 (這裡的函式內容都和之前一樣，無需修改) ---
+
             function populateCategories() {
-                // ... (此函式內容不變)
                 categoryCheckboxesContainer.innerHTML = '';
                 restaurantCategorySelect.innerHTML = '';
                 const selectAllContainer = document.createElement('div');
@@ -189,7 +184,6 @@
             }
 
             function updateOptions() {
-                // ... (此函式內容不變)
                 const selectedCategories = [];
                 document.querySelectorAll('#category-checkboxes .category-item:checked').forEach(checkbox => {
                     selectedCategories.push(checkbox.value);
@@ -200,9 +194,11 @@
             }
 
             function drawRouletteWheel() {
-                // ... (此函式內容不變)
                 const logicalWidth = canvas.clientWidth;
                 const logicalHeight = canvas.clientHeight;
+                if (logicalWidth === 0) { // 防止在容器尚未渲染時繪製
+                    return;
+                }
                 const centerX = logicalWidth / 2;
                 const centerY = logicalHeight / 2;
                 const outsideRadius = logicalWidth / 2 * 0.9;
@@ -211,6 +207,7 @@
                 if (options.length === 0) {
                     ctx.save();
                     ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
                     ctx.fillStyle = '#6B7280';
                     let fontSize = Math.max(12, Math.floor(logicalWidth / 20));
                     ctx.font = `bold ${fontSize}px "Noto Sans TC", sans-serif`;
@@ -251,16 +248,16 @@
                     ctx.restore();
                 }
             }
-
-            function spin() { /* ... (內容不變) ... */ }
-            function rotateWheel() { /* ... (內容不變) ... */ }
-            function stopRotateWheel() { /* ... (內容不變) ... */ }
-            function easeOut(t, b, c, d) { /* ... (內容不變) ... */ }
+            
+            function spin() { /* ... (內容不變) ... */ if (isSpinning || options.length === 0) return; isSpinning = true; spinButton.disabled = true; spinButton.classList.add('opacity-50', 'cursor-not-allowed'); resultDiv.style.opacity = 0; spinAngleStart = Math.random() * 10 + 10; spinTime = 0; spinTimeTotal = Math.random() * 3000 + 4000; rotateWheel(); }
+            function rotateWheel() { /* ... (內容不變) ... */ spinTime += 30; if (spinTime >= spinTimeTotal) { stopRotateWheel(); return; } const spinAngle = spinAngleStart - easeOut(spinTime, 0, spinAngleStart, spinTimeTotal); currentAngle += (spinAngle * Math.PI / 180); drawRouletteWheel(); spinTimeout = requestAnimationFrame(rotateWheel); }
+            function stopRotateWheel() { /* ... (內容不變) ... */ cancelAnimationFrame(spinTimeout); const degrees = currentAngle * 180 / Math.PI + 90; const arcd = arc * 180 / Math.PI; const index = Math.floor((360 - degrees % 360) / arcd); const selected = options[index]; if (selected) { resultName.textContent = selected.name; resultDescription.textContent = selected.description; resultLink.href = selected.url; resultLink.classList.toggle('hidden', !selected.url); } resultDiv.style.opacity = 1; isSpinning = false; spinButton.disabled = false; spinButton.classList.remove('opacity-50', 'cursor-not-allowed'); }
+            function easeOut(t, b, c, d) { /* ... (內容不變) ... */ const ts = (t /= d) * t; const tc = ts * t; return b + c * (tc + -3 * ts + 3 * t); }
             
             function resizeCanvas() {
-                console.log("5. resizeCanvas 執行中...");
                 const container = canvas.parentElement;
                 const size = container.clientWidth;
+                if (size === 0) return; // 如果容器還沒有寬度，就先不要執行
                 const dpr = window.devicePixelRatio || 1;
                 canvas.style.width = `${size}px`;
                 canvas.style.height = `${size}px`;
@@ -268,11 +265,9 @@
                 canvas.height = size * dpr;
                 ctx.scale(dpr, dpr);
                 drawRouletteWheel();
-                console.log("6. resizeCanvas 執行完畢");
             }
 
             function setupEventListeners() {
-                console.log("3. setupEventListeners 執行中...");
                 spinButton.addEventListener("click", spin);
                 window.addEventListener('resize', resizeCanvas);
                 addRestaurantBtn.addEventListener('click', () => addRestaurantModal.classList.remove('hidden'));
@@ -289,7 +284,10 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ restaurant: newRestaurant, category: category }),
                     })
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) { throw new Error(`伺服器回應錯誤: ${response.statusText}`); }
+                        return response.json();
+                     })
                     .then(data => {
                         if (data.success) {
                             alert(`成功新增餐廳「${newRestaurant.name}」！\n頁面將自動重新整理。`);
@@ -318,21 +316,23 @@
                         updateOptions();
                     }
                 });
-                console.log("4. setupEventListeners 執行完畢");
             }
 
             // --- 程式進入點 ---
-            console.log("2. 準備執行初始化函式...");
             populateCategories();
             setupEventListeners();
-            updateOptions();
-            resizeCanvas();
+            
+            // ✨ 這是關鍵的修正！ ✨
+            // 我們使用 requestAnimationFrame 來確保瀏覽器已經完成佈局計算
+            requestAnimationFrame(() => {
+                updateOptions(); // 這會觸發第一次繪製
+                resizeCanvas();  // 確保 canvas 尺寸正確
+            });
             
             resultName.textContent = "今天吃什麼？";
             resultDescription.textContent = "從上方勾選美食分類，然後點擊「轉！」按鈕！";
             resultDiv.style.opacity = 1;
             resultLink.classList.add('hidden');
-            console.log("7. --- initializeApp 結束 ---");
         }
     });
 </script>
