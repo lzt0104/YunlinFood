@@ -17,8 +17,6 @@
         .dark .custom-checkbox { background-color: #4B5563; border-color: #6B7280; }
         .custom-checkbox:checked { background-color: #3B82F6; border-color: #3B82F6; }
         .custom-checkbox:checked::after { content: '✔'; font-size: 0.8em; color: white; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
-        .modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.3s ease; }
-        .modal-fade-enter, .modal-fade-leave-to { opacity: 0; }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen flex flex-col items-center justify-center p-4">
@@ -59,7 +57,7 @@
         </div>
     </div>
 
-    <div id="addRestaurantModal" class="modal-fade-enter fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden" style="display: none;">
+    <div id="addRestaurantModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60" style="display: none;">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-2xl p-6 w-full max-w-md m-4">
             <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">推薦您的私藏餐廳</h2>
             <form id="addRestaurantForm">
@@ -98,7 +96,6 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // 從我們的 API Worker 載入初始資料
         fetch('/api/restaurants')
             .then(response => {
                 if (!response.ok) {
@@ -116,7 +113,6 @@
             });
 
         function initializeApp(foodData) {
-            // --- DOM 元素宣告 ---
             const canvas = document.getElementById('wheelCanvas');
             const ctx = canvas.getContext('2d');
             const spinButton = document.getElementById('spinButton');
@@ -131,7 +127,6 @@
             const addRestaurantForm = document.getElementById('addRestaurantForm');
             const restaurantCategorySelect = document.getElementById('restaurantCategory');
 
-            // --- 應用程式狀態變數 ---
             let options = [];
             let arc;
             let spinTimeout = null;
@@ -141,8 +136,6 @@
             let isSpinning = false;
             let currentAngle = 0;
             const colors = ["#F87171", "#60A5FA", "#34D399", "#FBBF24", "#A78BFA", "#F472B6", "#FB923C", "#2DD4BF"];
-
-            // --- 函式定義 (這裡的函式內容都和之前一樣，無需修改) ---
 
             function populateCategories() {
                 categoryCheckboxesContainer.innerHTML = '';
@@ -196,9 +189,7 @@
             function drawRouletteWheel() {
                 const logicalWidth = canvas.clientWidth;
                 const logicalHeight = canvas.clientHeight;
-                if (logicalWidth === 0) { // 防止在容器尚未渲染時繪製
-                    return;
-                }
+                if (logicalWidth === 0) { return; }
                 const centerX = logicalWidth / 2;
                 const centerY = logicalHeight / 2;
                 const outsideRadius = logicalWidth / 2 * 0.9;
@@ -249,15 +240,15 @@
                 }
             }
             
-            function spin() { /* ... (內容不變) ... */ if (isSpinning || options.length === 0) return; isSpinning = true; spinButton.disabled = true; spinButton.classList.add('opacity-50', 'cursor-not-allowed'); resultDiv.style.opacity = 0; spinAngleStart = Math.random() * 10 + 10; spinTime = 0; spinTimeTotal = Math.random() * 3000 + 4000; rotateWheel(); }
-            function rotateWheel() { /* ... (內容不變) ... */ spinTime += 30; if (spinTime >= spinTimeTotal) { stopRotateWheel(); return; } const spinAngle = spinAngleStart - easeOut(spinTime, 0, spinAngleStart, spinTimeTotal); currentAngle += (spinAngle * Math.PI / 180); drawRouletteWheel(); spinTimeout = requestAnimationFrame(rotateWheel); }
-            function stopRotateWheel() { /* ... (內容不變) ... */ cancelAnimationFrame(spinTimeout); const degrees = currentAngle * 180 / Math.PI + 90; const arcd = arc * 180 / Math.PI; const index = Math.floor((360 - degrees % 360) / arcd); const selected = options[index]; if (selected) { resultName.textContent = selected.name; resultDescription.textContent = selected.description; resultLink.href = selected.url; resultLink.classList.toggle('hidden', !selected.url); } resultDiv.style.opacity = 1; isSpinning = false; spinButton.disabled = false; spinButton.classList.remove('opacity-50', 'cursor-not-allowed'); }
-            function easeOut(t, b, c, d) { /* ... (內容不變) ... */ const ts = (t /= d) * t; const tc = ts * t; return b + c * (tc + -3 * ts + 3 * t); }
+            function spin() { if (isSpinning || options.length === 0) return; isSpinning = true; spinButton.disabled = true; spinButton.classList.add('opacity-50', 'cursor-not-allowed'); resultDiv.style.opacity = 0; spinAngleStart = Math.random() * 10 + 10; spinTime = 0; spinTimeTotal = Math.random() * 3000 + 4000; rotateWheel(); }
+            function rotateWheel() { spinTime += 30; if (spinTime >= spinTimeTotal) { stopRotateWheel(); return; } const spinAngle = spinAngleStart - easeOut(spinTime, 0, spinAngleStart, spinTimeTotal); currentAngle += (spinAngle * Math.PI / 180); drawRouletteWheel(); spinTimeout = requestAnimationFrame(rotateWheel); }
+            function stopRotateWheel() { cancelAnimationFrame(spinTimeout); const degrees = currentAngle * 180 / Math.PI + 90; const arcd = arc * 180 / Math.PI; const index = Math.floor((360 - degrees % 360) / arcd); const selected = options[index]; if (selected) { resultName.textContent = selected.name; resultDescription.textContent = selected.description; resultLink.href = selected.url; resultLink.classList.toggle('hidden', !selected.url); } resultDiv.style.opacity = 1; isSpinning = false; spinButton.disabled = false; spinButton.classList.remove('opacity-50', 'cursor-not-allowed'); }
+            function easeOut(t, b, c, d) { const ts = (t /= d) * t; const tc = ts * t; return b + c * (tc + -3 * ts + 3 * t); }
             
             function resizeCanvas() {
                 const container = canvas.parentElement;
                 const size = container.clientWidth;
-                if (size === 0) return; // 如果容器還沒有寬度，就先不要執行
+                if (size === 0) return;
                 const dpr = window.devicePixelRatio || 1;
                 canvas.style.width = `${size}px`;
                 canvas.style.height = `${size}px`;
@@ -270,8 +261,15 @@
             function setupEventListeners() {
                 spinButton.addEventListener("click", spin);
                 window.addEventListener('resize', resizeCanvas);
-                addRestaurantBtn.addEventListener('click', () => addRestaurantModal.classList.remove('hidden'));
-                cancelAddBtn.addEventListener('click', () => addRestaurantModal.classList.add('hidden'));
+                
+                // ✨ 修改了顯示和隱藏 modal 的方式 ✨
+                addRestaurantBtn.addEventListener('click', () => {
+                    addRestaurantModal.style.display = 'flex';
+                });
+                cancelAddBtn.addEventListener('click', () => {
+                    addRestaurantModal.style.display = 'none';
+                });
+
                 addRestaurantForm.addEventListener('submit', (e) => {
                     e.preventDefault();
                     const newRestaurant = { name: e.target.restaurantName.value, description: e.target.restaurantDescription.value || '我剛推薦的私藏好店！', url: e.target.restaurantUrl.value };
@@ -322,11 +320,9 @@
             populateCategories();
             setupEventListeners();
             
-            // ✨ 這是關鍵的修正！ ✨
-            // 我們使用 requestAnimationFrame 來確保瀏覽器已經完成佈局計算
             requestAnimationFrame(() => {
-                updateOptions(); // 這會觸發第一次繪製
-                resizeCanvas();  // 確保 canvas 尺寸正確
+                updateOptions();
+                resizeCanvas();
             });
             
             resultName.textContent = "今天吃什麼？";
@@ -335,6 +331,6 @@
             resultLink.classList.add('hidden');
         }
     });
-</script>
+    </script>
 </body>
 </html>
