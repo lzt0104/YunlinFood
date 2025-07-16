@@ -6,8 +6,8 @@ export async function onRequest(context) {
 
     // 從環境變數中取得我們綁定的 KV 資料庫
     const db = env.FOOD_WHEEL_DB;
-    // 取得我們綁定用於「日誌」的 KV 資料庫
-    const logDb = env.yunlinfood_log;
+    // 日誌儲存桶 (R2)
+    const logBucket = env.LOG_BUCKET;
 
     // 處理 GET 請求：取得所有餐廳資料
     if (request.method === "GET") {
@@ -26,7 +26,7 @@ export async function onRequest(context) {
         }
     }
 
-    // 處理 POST 請求：新增一家餐廳
+    /// 處理 POST 請求
     if (request.method === "POST") {
         try {
             const { restaurant, category } = await request.json();
@@ -35,52 +35,50 @@ export async function onRequest(context) {
                 return new Response("新增的資料不完整", { status: 400 });
             }
 
-            // 1. 從 KV 取出目前的完整資料
+            // --- 主要資料庫操作 (不變) ---
             const currentDataJson = await db.get("restaurants");
             const foodData = JSON.parse(currentDataJson || "{}");
-
-            // 2. 在記憶體中更新資料
-            if (foodData[category]) {
-                foodData[category].push(restaurant);
-            } else {
-                foodData[category] = [restaurant];
-            }
-
-            // 3. 將更新後的完整資料寫回 KV
+            if (!foodData[category]) foodData[category] = [];
+            foodData[category].push(restaurant);
             await db.put("restaurants", JSON.stringify(foodData));
+            // --- 主要資料庫操作結束 ---
 
-            // --- ✨ 新增日誌記錄到 KV ---
-            // 確認日誌資料庫的綁定存在
-            if (logDb) {
-                const timestamp = new Date().toISOString();
-                const logKey = `${timestamp}-${crypto.randomUUID()}`;
 
-                const logValue = JSON.stringify({
-                    timestamp: timestamp,
-                    ipAddress: request.headers.get('cf-connecting-ip'), // 獲取真實訪客 IP
+            // --- ✨ 新增日誌到 R2 的 log.json ---
+            if (logBucket) {
+                // 1. 從 R2 讀取現有的 log.json
+                const logFileObject = await logBucket.get('log.json');
+                let logs = [];
+                if (logFileObject) {
+                    logs = await logFileObject.json(); // 解析成陣列
+                }
+
+                // 2. 準備新的日誌內容並加入陣列
+                const newLogEntry = {
+                    timestamp: new Date().toISOString(),
+                    ipAddress: request.headers.get('cf-connecting-ip'),
                     restaurantName: restaurant.name,
                     category: category,
-                    description: restaurant.description,
-                    url: restaurant.url,
-                    userAgent: request.headers.get('user-agent') // 記錄 User Agent
-                });
+                };
+                logs.push(newLogEntry);
 
-                // 使用 put() 方法將日誌寫入 yunlinfood_log
-                // 使用 ctx.waitUntil 來確保即使在回傳回應後，寫入操作也能完成
-                context.waitUntil(logDb.put(logKey, logValue));
+                // 3. 將更新後的完整陣列寫回 R2 的 log.json
+                // 使用 ctx.waitUntil 讓它在背景完成
+                context.waitUntil(
+                    logBucket.put('log.json', JSON.stringify(logs, null, 2))
+                );
             }
-            // --- ✨ 日誌記錄結束 ---
+            // --- ✨ R2 日誌記錄結束 ---
 
             return new Response(JSON.stringify({ success: true, message: "新增成功" }), {
                 headers: { 'Content-Type': 'application/json' },
             });
 
         } catch (err) {
-            console.error(err); // 在後台印出詳細錯誤
+            console.error(err);
             return new Response(err.toString(), { status: 500 });
         }
     }
 
-    // 對於其他 HTTP 方法，回傳 405 Method Not Allowed
     return new Response("不支援的方法", { status: 405 });
 }
