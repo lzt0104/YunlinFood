@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,567 +9,388 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Noto Sans TC', sans-serif;
-            touch-action: manipulation;
-            /* 防止在行動裝置上雙擊縮放 */
-        }
-
-        canvas {
-            -webkit-tap-highlight-color: transparent;
-            /* 移除點擊時的藍色反白 */
-        }
-
-        .spin-button {
-            transition: transform 0.1s ease, box-shadow 0.1s ease;
-        }
-
-        .spin-button:active {
-            transform: scale(0.95);
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.7);
-        }
-        /* 美化 checkbox */
-        .custom-checkbox {
-            appearance: none;
-            background-color: #fff;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            width: 1.25em;
-            height: 1.25em;
-            cursor: pointer;
-            position: relative;
-            top: 0.2em;
-            margin-right: 0.5em;
-        }
-        .dark .custom-checkbox {
-            background-color: #4B5563;
-            border-color: #6B7280;
-        }
-        .custom-checkbox:checked {
-            background-color: #3B82F6;
-            border-color: #3B82F6;
-        }
-        .custom-checkbox:checked::after {
-            content: '✔';
-            font-size: 0.8em;
-            color: white;
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-        }
+        body { font-family: 'Noto Sans TC', sans-serif; touch-action: manipulation; }
+        canvas { -webkit-tap-highlight-color: transparent; }
+        .spin-button { transition: transform 0.1s ease, box-shadow 0.1s ease; }
+        .spin-button:active { transform: scale(0.95); box-shadow: 0 0 15px rgba(59, 130, 246, 0.7); }
+        .custom-checkbox { appearance: none; background-color: #fff; border: 1px solid #ccc; border-radius: 4px; width: 1.25em; height: 1.25em; cursor: pointer; position: relative; top: 0.2em; margin-right: 0.5em; transition: background-color 0.2s, border-color 0.2s; }
+        .dark .custom-checkbox { background-color: #4B5563; border-color: #6B7280; }
+        .custom-checkbox:checked { background-color: #3B82F6; border-color: #3B82F6; }
+        .custom-checkbox:checked::after { content: '✔'; font-size: 0.8em; color: white; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+        .modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.3s ease; }
+        .modal-fade-enter, .modal-fade-leave-to { opacity: 0; }
     </style>
 </head>
-
-<body
-    class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen flex flex-col items-center justify-center p-4">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen flex flex-col items-center justify-center p-4">
 
     <div class="w-full max-w-2xl text-center">
         <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-2">美食天降轉盤</h1>
         <p class="text-md sm:text-lg text-gray-600 dark:text-gray-400 mb-6">解決你的選擇困難症！</p>
 
-        <div class="mb-6 text-left">
+        <div class="mb-4 text-left">
             <label class="block text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">選擇美食分類 (可複選):</label>
             <div id="category-container" class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg p-4 shadow-md max-h-48 overflow-y-auto">
                 <div id="category-checkboxes" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-2">
-                    </div>
-            </div>
-        </div>
-        <div class="relative w-full max-w-md mx-auto aspect-square">
-            <canvas id="wheelCanvas"></canvas>
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
-                <button id="spinButton"
-                    class="spin-button w-20 h-20 bg-blue-600 dark:bg-blue-500 text-white font-bold text-2xl rounded-full shadow-lg border-4 border-white dark:border-gray-800 focus:outline-none">轉！</button>
-            </div>
-            <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2/3"
-                style="width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 30px solid #f59e0b;">
+                    <p class="col-span-full text-center text-gray-500">正在從資料庫載入美食清單...</p>
+                </div>
             </div>
         </div>
 
-        <div id="result"
-            class="mt-8 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg min-h-[150px] flex flex-col items-center justify-center transition-opacity duration-500 opacity-0">
-            <h2 id="result-name" class="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400 text-center">
-            </h2>
-            <p id="result-description" class="mt-2 text-base md:text-lg text-gray-600 dark:text-gray-300 text-center">
-            </p>
-            <a id="result-link" href="#" target="_blank" rel="noopener noreferrer"
-                class="mt-4 inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition-colors duration-300 hidden">
+        <div class="mb-6 text-left">
+            <button id="addRestaurantBtn" class="w-full bg-rose-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-rose-600 transition-colors duration-300 shadow-md">
+                ❤️ 推薦你的私藏餐廳
+            </button>
+        </div>
+        
+        <div class="relative w-full max-w-md mx-auto aspect-square">
+            <canvas id="wheelCanvas"></canvas>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
+                <button id="spinButton" class="spin-button w-20 h-20 bg-blue-600 dark:bg-blue-500 text-white font-bold text-2xl rounded-full shadow-lg border-4 border-white dark:border-gray-800 focus:outline-none">轉！</button>
+            </div>
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2/3" style="width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 30px solid #f59e0b;"></div>
+        </div>
+
+        <div id="result" class="mt-8 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg min-h-[150px] flex flex-col items-center justify-center transition-opacity duration-500 opacity-0">
+            <h2 id="result-name" class="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400 text-center"></h2>
+            <p id="result-description" class="mt-2 text-base md:text-lg text-gray-600 dark:text-gray-300 text-center"></p>
+            <a id="result-link" href="#" target="_blank" rel="noopener noreferrer" class="mt-4 inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition-colors duration-300 hidden">
                 📍 前往地圖
             </a>
         </div>
     </div>
 
-    <script>
-        // --- 資料整理 ---
-        const foodData = {
-            "麵食": [
-                { name: '糊塗麵', description: '大力推薦酸辣乾拌麵加地瓜葉加紅油抄手，麵條勁道十足，份量超值，加辣椒更美味！', url: 'https://maps.app.goo.gl/MQ5t8sMouDe6UD4y9' },
-                { name: '大崙發哥麵店', description: '乾麵好吃，但蛋飯更驚艷（肉燥香氣十足）。', url: 'https://maps.app.goo.gl/kYJUdKWZLRUt52rTA' },
-                { name: '台東人', description: '乾麵好吃，打烊時間較晚。', url: 'https://maps.app.goo.gl/AVEEtnyqMqhmWPNF7' },
-                { name: '重慶小麵', description: '豌雜麵非常好吃，麵條Q彈。', url: 'https://maps.app.goo.gl/9vRMz8VntcYSvq6w8' },
-                { name: '山東古嵇麵食館', description: '酸辣湯好喝，炸醬乾拌麵加辣椒超讚，比單點香辣乾拌麵更美味。', url: 'https://maps.app.goo.gl/ZrrxmFBBXfBeiCW6A' },
-                { name: '迪化街紅麵線', description: '炸臭豆腐好吃，麵線也不錯。', url: 'https://maps.app.goo.gl/zh5cXtSbJeANwzBR9' },
-                { name: '廣東客家石磨腸粉', description: '腸粉不錯吃，個人更喜歡蒸麵，雖然略乾但蠻香的。', url: 'https://maps.app.goo.gl/Aqp4frzRgdmiaSRAA' },
-                { name: '34妹桂林米線', description: '螺螄粉料多實在，肉質嫩，口味偏清淡。', url: 'https://maps.app.goo.gl/sWpi6Qeaf4B4T7xA7' },
-                { name: '李東記', description: '肉好吃湯也很好喝，建議提早去12.前和6.前，過了這兩個時段很難再吃到了。', url: 'https://maps.app.goo.gl/632jLXiJFbavc3P49' },
-                { name: '林麵舖', description: '我的口袋名單之一，網路大推。', url: 'https://maps.app.goo.gl/2ngpdpG3orvgHigN9' }
-            ],
-            "牛肉麵": [
-                { name: '老謝牛肉麵', description: '牛肉塊很大，個人更愛清燉牛肉麵加自助酸菜。辣油非常辣！滷味小豆干超好吃。', url: 'https://maps.app.goo.gl/4pZhKS68et9BHnYg7' },
-                { name: '豪宅牛肉麵', description: '重口味牛肉麵，麵條好吃，酸辣口味和招牌紅燒湯頭都很不錯。', url: 'https://maps.app.goo.gl/qPg327a6QZ3S2K2a6' },
-                { name: '小張牛肉麵', description: '平價不錯吃。', url: 'https://maps.app.goo.gl/HHfJDRPeKCCcDXMF9' },
-                { name: '老吳牛肉麵', description: '平價肉多好吃。', url: 'https://maps.app.goo.gl/8tcyGBuvyR5C9ykTA' }
-            ],
-            "拉麵": [
-                { name: '麵屋三豚', description: '首推拉麵，即使不愛拉麵的人也會喜歡。', url: 'https://maps.app.goo.gl/jCX48twsp1ATzqxk6' },
-                { name: '沐村拉麵', description: '改名後聽說口味改變，尚未嘗試，山越時期覺得很好吃。', url: 'https://maps.app.goo.gl/7KiBMHydHV3Yn6x38' },
-                { name: '將屋', description: '醬油拉麵讚！', url: 'https://maps.app.goo.gl/XMXGbAjgVtPiEiXo7' }
-            ],
-            "羹麵": [
-                { name: '大娘羹', description: '土魠魚羹米粉超愛，加辣粉更美味！黃金泡菜、炸豆腐也好吃。', url: 'https://maps.app.goo.gl/i1aF6fXM5AEfd5PPA' },
-                { name: '高稼庄', description: '老闆超熱情，除了羹，蒜泥白肉也好吃。', url: 'https://maps.app.goo.gl/kDW4BPyDzySNWV6M9' }
-            ],
-            "義大利麵": [
-                { name: '騷咖啡', description: '雖然是咖啡廳，但義大利麵蠻好吃的，飲料很大杯。', url: 'https://maps.app.goo.gl/tQwaMzT8dmtoK5ai8' },
-                { name: '馬沙義大利麵館', description: '不知道為何評價很低，但個人覺得還不錯，有附飲料和濃湯。', url: 'https://maps.app.goo.gl/pZ9d6cubDy1eAzfU8' },
-                { name: '即食樂', description: '烤雞、蛤蜊義大利麵都不錯，奶青茶好喝。', url: 'https://maps.app.goo.gl/rT82oxvH2JS96YGy8' }
-            ],
-            "鍋燒": [
-                { name: '珋乃堂', description: '湯頭好喝。', url: 'https://maps.app.goo.gl/2SL3L4voJGa8gBs28' },
-                { name: '勞碌命', description: '個人認為珋乃堂比較好吃，但這家也不錯。', url: 'https://maps.app.goo.gl/GF4LUJyC35GA2E4U9' },
-                { name: '阿基鍋燒', description: '中午下課常吃的一家，便宜實惠+10塊還有滷肉飯可以吃。', url: 'https://maps.app.goo.gl/sXrFJZYuX6dxUxFm9' }
-            ],
-            "飯食": [
-                { name: '李記燒肉', description: '打烊時間較晚，份量略小但蠻好吃的，個人覺得偏甜。', url: 'https://maps.app.goo.gl/EFoXx784JXCK53je6' },
-                { name: '好食堂懷舊麵館', description: '推薦醬油蛋飯，古早味，很喜歡！也有賣鍋燒、泡麵。', url: 'https://maps.app.goo.gl/1jiYVx23nPbJEw3j8' },
-                { name: '鄉間小屋', description: '價格偏貴，有附小甜點，湖南菜系，香辣肥腸好吃。', url: 'https://maps.app.goo.gl/6UUbPRsnkZ7WwJdGA' },
-                { name: '雲饌便當', description: '肉很大塊，推薦烤肉飯，菜可以自選，略油。', url: 'https://maps.app.goo.gl/QmCrFgtwo3u5DPX46' },
-                { name: '中餐食堂', description: '炒飯很好吃，推薦香腸炒飯。', url: 'https://maps.app.goo.gl/spKwgXhdK7PXYuq88' },
-                { name: '木火肉粽', description: '肉粽好吃又平價。', url: 'https://maps.app.goo.gl/EiHFRAtqd5dnQRGi7' },
-                { name: '元爵味黃燜雞', description: '推薦黃燜豬和酸湯豬，馬鈴薯很好吃。', url: 'https://maps.app.goo.gl/Av7Us6tH2a84QmGp6' },
-                { name: '張記鵝肉', description: '每道菜都好吃！', url: 'https://maps.app.goo.gl/jX4xafMAHknkHK3D9' },
-                { name: '肉勒', description: '唐揚雞好吃，最近好像都沒開。', url: 'https://maps.app.goo.gl/yTBYpB5HD3e7mGp46' },
-                { name: '大頭小吃部', description: '超便宜，推排骨飯，月底救星。', url: 'https://maps.app.goo.gl/ffMjg12rfh44Yg787' },
-                { name: '越南料理', description: '炒飯很好吃，便宜大碗，推薦加辣醬。', url: 'https://maps.app.goo.gl/FeVgiYSH4NceuDzQ7' },
-                { name: '美味食堂', description: '他家的炒飯也很好吃。', url: 'https://maps.app.goo.gl/Zbpeyzs8Psb9bZC98' },
-                { name: '米倉食堂', description: '脆皮雞腿排好吃，飯可以無限續。', url: 'https://maps.app.goo.gl/vigWVVLbgUAUeGfC6' },
-                { name: '新鮮現炒小吃', description: '炒飯很好吃，環境有點差。', url: 'https://maps.app.goo.gl/G5LiDkPprRnLcPej8' },
-                { name: '阿亮現炒', description: '這家也是炒飯好吃，但人很多。', url: 'https://maps.app.goo.gl/7r5BxHoDMqTrGXhT6' }
-            ],
-            "燒臘": [
-                { name: '豪香燒臘', description: '最愛叉燒飯，有附湯和紅茶，配菜都很喜歡。', url: 'https://maps.app.goo.gl/YvnNpWgVuqShfNiUA' },
-                { name: '富臨燒臘', description: '聽說肉很多很好吃，還沒去吃過。', url: 'https://maps.app.goo.gl/9317P3UDcTUCu7h39' }
-            ],
-            "咖哩": [
-                { name: '微笑咖喱', description: '平民價位咖哩，嫩雞必點！薯條也好吃。', url: 'https://maps.app.goo.gl/YvF3uJSiRUsdXNQz6' },
-                { name: '溫度咖哩', description: '價格偏貴，咖哩微酸，但吃得出店家食材的用心。', url: 'https://maps.app.goo.gl/Ehu7WRjsUoyT2oy39' },
-                { name: '隱の咖喱', description: '唐揚雞咖哩好吃，有附沙拉，很飽。', url: 'https://maps.app.goo.gl/8Y2oGs7GAtq32sXL9' },
-                { name: '拍拍俱樂部', description: '建議點飯少，真的會吃很飽，唐揚雞好吃。', url: 'https://maps.app.goo.gl/Y3zceqgeJ8t3EQmp9' },
-                { name: '簡單。咖哩', description: '真的很簡單，但很好吃，價格便宜。', url: 'https://maps.app.goo.gl/Jq2qQkpXK5Az893E9' }
-            ],
-            "雞肉飯": [
-                { name: '阿財雞肉飯', description: '都點中份的，有附一樣菜，還有紅茶喝。', url: 'https://maps.app.goo.gl/RPLXy2dvR4exiqgm8' },
-                { name: '黃傢火雞肉飯', description: '茄子超推，雞肉飯也很好吃，價格便宜。', url: 'https://maps.app.goo.gl/jTRg4Mef1UTPLwst7' }
-            ],
-            "健康餐": [
-                { name: '健康那件小事', description: '菜和飯都好吃，推薦豬肉豆腐排和雞胸肉。', url: 'https://maps.app.goo.gl/RQh5vd2cHezQsCZC7' },
-                { name: '享soul', description: '雖然菜有時不好吃，但主食肉一直都很不錯，有附湯。', url: 'https://maps.app.goo.gl/omRqCH8MVETpMZQH6' }
-            ],
-            "粥": [
-                { name: '狀元廣東粥', description: '份量很大，很好吃。', url: 'https://maps.app.goo.gl/MHWBhhnBkz1Rxe6p6' },
-                { name: '粥饌廣東粥', description: '可以吃到飽，飲料是印度風味，很特別。', url: 'https://maps.app.goo.gl/AnGJ2s3SxGsdRZBd8' },
-                { name: '斗六廣東粥', description: '生病時買的，意外蠻好吃的，下次想嘗試日月粥。', url: 'https://maps.app.goo.gl/Cqs8jEpvizKVDaxh8' }
-            ],
-            "餃子": [
-                { name: '胖煎餃', description: '餃子很大顆，打卡送紅茶，辣醬很讚。', url: 'https://maps.app.goo.gl/C5wHJjZHHRZSvXBn7' },
-                { name: '老蔣餃子館', description: '便宜，上次意外發現餛飩麵超好吃。', url: 'https://maps.app.goo.gl/Y5S4yTR81GRp3P2M8' },
-                { name: '日劇裡的燒餃子', description: '網美打卡聖地，餃子6顆而已，但皮真的很脆很好吃。', url: 'https://maps.app.goo.gl/cSGXW1o72QDg88tY6' }
-            ],
-            "火鍋": [
-                { name: '鍋湯匯', description: '24H營業，嘴饞想吃可以找他。', url: 'https://maps.app.goo.gl/X9aPDmdTS5zyZoKdA' },
-                { name: '五鮮級', description: '五鮮級不用說。', url: 'https://maps.app.goo.gl/rY3Hsr4PZowLtzJPA' },
-                { name: '億品鍋', description: '超級划算，自助吧有沙拉，麵食也可以吃到飽。', url: 'https://maps.app.goo.gl/DeNWDYgoDrnDEByW6' },
-                { name: '嗑肉石鍋', description: '聚會最常去的火鍋店，自助吧多到讓你吃到爽。', url: 'https://maps.app.goo.gl/m4Gu2C7QgRYCXpP96' },
-                { name: '圓砌', description: '這家也是讓你吃到爽的火鍋店。', url: 'https://maps.app.goo.gl/MwXk2FeCAqs8mcoP7' },
-                { name: '鐵娘子', description: '稍貴，但肉的品質很棒很好吃。', url: 'https://maps.app.goo.gl/X4UcKHDQ7TeGFHpV7' },
-                { name: '8鍋', description: '人比六扇門少，但覺得很乾淨，算蠻平價的，自助吧有涼麵。', url: 'https://maps.app.goo.gl/aMrtAr8s3kcsW2FUA' },
-                { name: '旺記', description: '宵夜也可以吃，大腸三寶鍋超愛！不要在宿舍吃，會很臭！', url: 'https://maps.app.goo.gl/kLnEHohH7sgYA796A' },
-                { name: '六扇門', description: '都吃番茄鍋，辣椒很辣我很愛，鴨血好吃必點。', url: 'https://maps.app.goo.gl/11MVbQMD9Uhfx89EA' },
-                { name: '一品香', description: '好吃，喜歡他們的醬料，冰也好吃。', url: 'https://maps.app.goo.gl/BGWqC6fUeKa6BszY9' }
-            ],
-            "麻辣燙/關東煮/滷味": [
-                { name: '川醉湘', description: '鴨血好吃，湯頭很特別，滷味寬麵很讚。', url: 'https://maps.app.goo.gl/SNALrWKVo26gpDbi7' },
-                { name: '雲科大滷味', description: '雞爪、雞排、泡麵都必點，只有外帶。', url: 'https://maps.app.goo.gl/JWSTtG1y3DNsq8V17' },
-                { name: '丐幫滷味', description: '龍潭路月底救星。', url: 'https://maps.app.goo.gl/8rHXXuv4kUpAhrQt09' },
-                { name: '斗南阿呆滷味', description: '滷的很入味很好吃，他的辣也可以嘗嘗。', url: 'https://maps.app.goo.gl/BQKdXurm22WPstkU8' },
-                { name: '十畝田滷味', description: '龍潭路月底救星。', url: 'https://maps.app.goo.gl/g7rfMgQ7A7U2KRgn6' },
-                { name: '煮夫麻辣關東煮', description: '偏清淡，想吃清淡點的可以吃這家。', url: 'https://maps.app.goo.gl/S4gpnMb5PfVGupaS9' },
-                { name: '味道關東煮', description: '東西很好吃，湯也很好喝。', url: 'https://maps.app.goo.gl/81cNbTTwuJw21Mu6A' },
-                { name: '貳貳壹關東煮', description: '愛店，老闆是聽團仔，雞胸肉很好吃必點。', url: 'https://maps.app.goo.gl/DDZ2MZkwgfd642DP8' },
-                { name: 'ㄎㄧㄤㄎㄧㄤ關東煮', description: '可選擇東西很多，湯也很好喝。', url: 'https://maps.app.goo.gl/SXP5WFChH7Yk6Yqv5' }
-            ],
-            "燒烤/炭烤/排餐": [
-                { name: '炭火燒肉工房', description: '平價好吃。目前被燒掉了，期待他捲土重來吧。', url: 'https://maps.app.goo.gl/Vy5vgiJK1SYDyCcw7' },
-                { name: '丸京', description: '比較高級的套餐式，小菜很特別。', url: 'https://maps.app.goo.gl/1VZDtFXypxJPKfUv6' },
-                { name: '口味炭烤', description: '價格略貴，但不錯吃。', url: 'https://maps.app.goo.gl/uFykdEAgRgJE7VPG6' },
-                { name: '珍有味', description: '價格略貴，但不錯吃。', url: 'https://maps.app.goo.gl/LXK5QBVGZEiDhQbP8' },
-                { name: '尚味碳烤', description: '偏遠，蠻好吃的。', url: 'https://maps.app.goo.gl/czGDWjtHKHDGx6446' },
-                { name: '海楓炭烤', description: '稍貴，在龍潭路上，配上啤酒吃好吃。', url: 'https://maps.app.goo.gl/LpzprPDqq5WU27Lm9' },
-                { name: '名爐炭烤東和香腸', description: '價格便宜量又大，好吃的不像話。', url: 'https://maps.app.goo.gl/hfkGHMpU33fLh3Nw7' },
-                { name: '原味燒烤', description: '龍潭上的平價炭烤。', url: 'https://maps.app.goo.gl/RopXsPzfoGWUjTFU7' },
-                { name: '一鮮切', description: '超推他們的石鍋拌飯，肉質好，內用雞湯&奶茶無限喝。', url: 'https://maps.app.goo.gl/299YSTaVZ37tfGcd7' },
-                { name: '成功牛排', description: '雞腿好吃，通心粉很特別，有自助吧。', url: 'https://maps.app.goo.gl/Uq4MB6LfJ6NgfxgC7' },
-                { name: '板塊牛排', description: '很久沒吃，印象中很好吃。', url: 'https://maps.app.goo.gl/An1BjqoiboQNwL5d8' },
-                { name: '史提克', description: '沒吃過，但聽說很好吃。', url: 'https://maps.app.goo.gl/i5XBDT5H7phHVnhr7' },
-                { name: '鐵町', description: '鐵板燒，好吃。', url: 'https://maps.app.goo.gl/cBXC6wnHq1QXYta96' },
-                { name: '大埔鐵板燒', description: '有包手品質保證。', url: 'https://maps.app.goo.gl/D2dHmN1VSufXkznR7' }
-            ],
-            "炸物/鹹酥雞": [
-                { name: '台雞店', description: '鹹酥雞肉質鮮嫩多汁，缺點就是要等半小時以上。', url: 'https://maps.app.goo.gl/vh5aJdekQAcH2UoYA' },
-                { name: '野火鹹酥雞', description: '炸很酥很脆，很好吃。', url: 'https://maps.app.goo.gl/osubivXUSAXJjZ44A' },
-                { name: '張蒲鹹酥雞', description: '雞皮不要點其他都可以，炸的很酥好吃。', url: 'https://maps.app.goo.gl/ANaaZb2rRQJBDY1z6' },
-                { name: '阿亮雞排', description: '每樣都好吃。', url: 'https://maps.app.goo.gl/BtyXeirqaxw3AS5g8' }
-            ],
-            "異國料理": [
-                { name: '飛泰園', description: '泰式。每道菜都好吃，椒麻雞超驚艷。', url: 'https://maps.app.goo.gl/5uAStTNeEr3GGMSe9' },
-                { name: '小仙', description: '越式。份量很大，可以吃到飽，價格便宜。', url: 'https://maps.app.goo.gl/LspeSWerJZp4KwZ18' },
-                { name: '香蕉葉', description: '馬來西亞式。價格偏貴，但蠻好吃的。', url: 'https://maps.app.goo.gl/rzAQhRV4bXd4c1zTA' },
-                { name: '歐爸好食', description: '韓式。老闆是韓國人，好吃。', url: 'https://maps.app.goo.gl/ZHw3sZuhum5idoVV9' },
-                { name: '韓手作', description: '韓式。便宜親民韓式料理。', url: 'https://maps.app.goo.gl/yiV8TndQEYRGzAkW6' },
-                { name: '福道田', description: '日式。外觀漂亮，食材新鮮好吃。', url: 'https://maps.app.goo.gl/Jk6WJqaWtGPhHhRY7' },
-                { name: '斗六生魚片', description: '日式。新鮮好吃。', url: 'https://maps.app.goo.gl/mtvus8rbmrmADPZq6' },
-                { name: '宮本武丼', description: '日式。內用有泰奶霜淇淋、冬瓜檸檬、雞白湯。', url: 'https://maps.app.goo.gl/hytd1HMtDMvqUcRRA' }
-            ],
-            "早餐/早午餐": [
-                { name: '木偶人', description: '喜歡手工起司豬排熱壓吐司。', url: 'https://maps.app.goo.gl/mQAayGaHo6p5Gyx18' },
-                { name: '找夢', description: '便宜好吃，推薦蘿蔔糕。', url: 'https://maps.app.goo.gl/F8P1dVbbaFb8AtK88' },
-                { name: '小食曉食', description: '美式辣牛肉醬熱狗腸堡好吃。', url: 'https://maps.app.goo.gl/qzCzdgxDHw3SsNQRA' },
-                { name: 'Bocadina三明治廚房', description: '巧克力堅果熱壓很驚艷。', url: 'https://maps.app.goo.gl/R8mvL5F2xpHGhP7UA' },
-                { name: '早餐好樂', description: '最喜歡的早午餐，量多大份。', url: 'https://maps.app.goo.gl/TAY9obEStcRUq3Aw9' },
-                { name: '喜酥碳烤土司', description: '比早安有喜好吃，內用還有無限供應玉米濃湯。', url: 'https://maps.app.goo.gl/opekKjwEp27hTkQF7' },
-                { name: '麋鹿爺爺Moose papa', description: '很頂的早午餐選擇，店內還有貓可以讓你撸。', url: 'https://example.com' }, // Placeholder URL
-                { name: '青食', description: '價格偏貴，但裝潢很酷，食材新鮮。', url: 'https://maps.app.goo.gl/S9dQDgKAEFXBrSRv6' }
-            ],
-            "宵夜": [
-                { name: '格寧貳貳', description: '評價褒貶不一，個人覺得價格偏貴。', url: 'https://maps.app.goo.gl/AtcN9HZnjCE1E36x5' },
-                { name: '紅磚輕食', description: '東西選擇很多，個人認為比格寧好吃。', url: 'https://maps.app.goo.gl/ZTfthEJkyagiefu59' },
-                { name: '二吉軒', description: '中式的餐點，推煎餃跟蛋餅。', url: 'https://maps.app.goo.gl/9gzGDFPtcBUWXFYB7' },
-                { name: '管家婆', description: '半夜不睡覺肚子餓的好去處。', url: 'https://maps.app.goo.gl/vEoQTR2oeJWVMpNF7' },
-                { name: '夯(大力)', description: '龍潭上的夜晚好去處，老闆娘人好。', url: 'https://maps.app.goo.gl/Ltp5iSCo3wbgTDnw7' },
-                { name: '慶記鮮魚湯', description: '魚肉很好吃湯很好喝。', url: 'https://maps.app.goo.gl/M9RR5hVpjXpuaWDFA' },
-                { name: '坤記刈包', description: '斗六火車站前的宵夜好去處。', url: 'https://maps.app.goo.gl/k3bvm8ZgTM5poudJ6' },
-                { name: '邱永和豆漿大王', description: '種類很多，蒜頭醬油很讚必加。', url: 'https://maps.app.goo.gl/2iNjxUQv62kvRFiG6' },
-                { name: '早窩堡堡', description: '吃過一次，覺得量少又沒有很好吃。', url: 'https://maps.app.goo.gl/itf2fZM6qstBJiDm8' },
-                { name: '斗南炸饅頭', description: '想不到吃什麼的時候斗炸幫你。', url: 'https://maps.app.goo.gl/UtQ7PrcEGRr2EzHG6' },
-                { name: '牛肉湯', description: '一定要去台南吃原汁原味的牛肉湯。', url: 'https://www.google.com/maps/search/台南牛肉湯' }
-            ],
-            "點心": [
-                { name: '人氣黃金薯', description: '很多口味可以選擇。', url: 'https://maps.app.goo.gl/Gym3Qb97SoDHtADN6' },
-                { name: '阿李媽媽豆奶酪', description: '加麥片很好吃，建議少冰。', url: 'https://maps.app.goo.gl/nwwNoUHmi44kNtCc7' },
-                { name: '山田農園', description: '鳳梨冰沙超愛，還有賣爆米花。', url: 'https://maps.app.goo.gl/4r37xbAgpm7VjTKm9' },
-                { name: '巴蕊義式冰淇淋', description: '口味都很好吃，但價格偏貴。', url: 'https://maps.app.goo.gl/14A83oNZACoivrR97' },
-                { name: '溝仔垻清涼冰店', description: '便宜必吃，雪泥杯加冰淇淋、三明治冰也都好吃。', url: 'https://maps.app.goo.gl/YmrGJF2iidLx5FRG7' },
-                { name: '綠果子', description: '不貴，料超好吃。', url: 'https://maps.app.goo.gl/pHxPNANY5SLTSz3c6' },
-                { name: '長興圓仔冰', description: '燒麻糬超讚。', url: 'https://maps.app.goo.gl/y9bo64rbULi3kDFt7' },
-                { name: '鴻炫餅', description: '便宜當點心吃，很好吃。', url: 'https://maps.app.goo.gl/ZQHWqHbSmeShX5MG8' },
-                { name: '榕樹下豆花', description: '便宜好吃，很有鄉下的感覺。', url: 'https://maps.app.goo.gl/WqFjvrXyKjeuhosC6' },
-                { name: '36度C', description: '龍潭路上的好吃冰店。', url: 'https://maps.app.goo.gl/7UVnvkLk7GiUgw49A' },
-                { name: '四代目', description: '50塊的冰讓你吃到所以的料。', url: 'https://maps.app.goo.gl/GgZnGjUhhzkW3incA' }
-            ],
-            "蛋糕": [
-                { name: '初禾', description: '蛋糕漂亮好吃，但價格稍貴。', url: 'https://maps.app.goo.gl/LgrqZV2KbJua8PtS9' },
-                { name: '芊品坊', description: '芋頭蛋糕很厲害，也有很多小蛋糕。', url: 'https://maps.app.goo.gl/tMebWoGT3FvsFw1D9' },
-                { name: '多那之', description: '很適合做作業，蛋糕好吃。', url: 'https://maps.app.goo.gl/P6Hc8uww2CMvbxq17' },
-                { name: '塔吉特Touched', description: '千層蛋糕好吃。', url: 'https://maps.app.goo.gl/h8tFZi3uNQkMHatJA' }
-            ],
-            "飲料": [
-                { name: '可不可熟成紅茶 - 斗六民生南店', description: '', url: '' },
-                { name: '麻古茶坊 - 斗六中山店', description: '', url: '' },
-                { name: '五桐號 - 斗六中山店', description: '', url: '' },
-                { name: '迷客夏 - 雲林斗六店', description: '', url: '' },
-                { name: '烏弄原生茶飲 - 斗六中山店', description: '', url: '' },
-                { name: '一沐日 - 斗六中山店', description: '', url: '' },
-                { name: '八曜和茶 - 雲林斗六門市', description: '', url: '' },
-                { name: '得正 - 斗六中山計劃', description: '', url: '' },
-                { name: '清心福全 - 斗六站前店', description: '', url: '' },
-                { name: '50嵐 - 斗六中山店', description: '', url: '' },
-                { name: '老賴茶棧 - 斗六中山店', description: '', url: '' },
-                { name: '一手私藏世界紅茶 - 斗六中山店', description: '', url: '' },
-                { name: '茶湯會 - 斗六中山店', description: '', url: '' },
-                { name: 'COMEBUY - 斗六中山店', description: '', url: '' },
-                { name: '大苑子 - 斗六民生店', description: '', url: '' },
-                { name: '鮮茶道 - 斗六民生店', description: '', url: '' },
-                { name: 'Mr.Wish - 斗六中山店', description: '', url: '' },
-                { name: '三分春色 - 斗六民生店', description: '', url: '' },
-                { name: '陳飲checkin - 斗六店', description: '', url: '' },
-                { name: '大茗本位製茶堂 - 斗六中山店', description: '', url: '' },
-                { name: '春上手作茶飲', description: '', url: '' },
-                { name: '小雀幸Cher Cha', description: '', url: '' },
-                { name: 'UG - 斗六中山店', description: '', url: '' },
-                { name: '茗泰子', description: '', url: '' },
-                { name: '十口茶 - 斗六店', description: '', url: '' },
-                { name: '啵棒珍珠果茶專賣所', description: '', url: '' },
-                { name: '樂。茶坊 - 斗六民生南店', description: '', url: '' },
-                { name: '白巷子 - 斗六中山店', description: '', url: '' },
-                { name: '春涼好茶 - 雲林斗六店', description: '', url: '' },
-                { name: '小金旺茶坊 - 斗六圓環店', description: '', url: '' },
-                { name: '等夏飲料店', description: '', url: '' },
-                { name: '樂法 Le Phare - 斗六店', description: '', url: '' },
-                { name: '軍茶 - 斗六太平店', description: '', url: '' }
-            ]
-        };
+    <div id="addRestaurantModal" class="modal-fade-enter fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-2xl p-6 w-full max-w-md m-4">
+            <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">推薦您的私藏餐廳</h2>
+            <form id="addRestaurantForm">
+                <div class="mb-4">
+                    <label for="restaurantName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">餐廳名稱 <span class="text-red-500">*</span></label>
+                    <input type="text" id="restaurantName" name="restaurantName" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700">
+                </div>
+                <div class="mb-4">
+                    <label for="restaurantCategory" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">美食分類 <span class="text-red-500">*</span></label>
+                    <select id="restaurantCategory" name="restaurantCategory" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700"></select>
+                </div>
+                <div class="mb-4">
+                    <label for="restaurantDescription" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">推薦理由</label>
+                    <textarea id="restaurantDescription" name="restaurantDescription" rows="3" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700"></textarea>
+                </div>
+                 <div class="mb-6">
+                    <label for="restaurantUrl" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Google Maps 網址</label>
+                    <input type="url" id="restaurantUrl" name="restaurantUrl" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700" placeholder="https://maps.app.goo.gl/...">
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button" id="cancelAddBtn" class="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">取消</button>
+                    <button type="submit"
+                        class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors">送出推薦</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-        // --- 應用程式邏輯 ---
-        const canvas = document.getElementById('wheelCanvas');
-        const ctx = canvas.getContext('2d');
-        const spinButton = document.getElementById('spinButton');
-        const categoryCheckboxesContainer = document.getElementById('category-checkboxes');
-        const resultDiv = document.getElementById('result');
-        const resultName = document.getElementById('result-name');
-        const resultDescription = document.getElementById('result-description');
-        const resultLink = document.getElementById('result-link');
-
-        let options = [];
-        let arc;
-        let spinTimeout = null;
-        let spinAngleStart;
-        let spinTime = 0;
-        let spinTimeTotal = 0;
-        let isSpinning = false;
-        let currentAngle = 0;
-
-        const colors = ["#F87171", "#60A5FA", "#34D399", "#FBBF24", "#A78BFA", "#F472B6", "#FB923C", "#2DD4BF"];
-
-        // 修改: 初始化複選框
-        function populateCategories() {
-            // 新增「全選」選項
-            const selectAllContainer = document.createElement('div');
-            selectAllContainer.className = 'font-bold text-blue-600 dark:text-blue-400';
-            const selectAllCheckbox = document.createElement('input');
-            selectAllCheckbox.type = 'checkbox';
-            selectAllCheckbox.id = 'select-all';
-            selectAllCheckbox.value = 'all';
-            selectAllCheckbox.className = 'custom-checkbox';
-            const selectAllLabel = document.createElement('label');
-            selectAllLabel.htmlFor = 'select-all';
-            selectAllLabel.textContent = '全選';
-            selectAllLabel.className = 'cursor-pointer';
-            selectAllContainer.appendChild(selectAllCheckbox);
-            selectAllContainer.appendChild(selectAllLabel);
-            categoryCheckboxesContainer.appendChild(selectAllContainer);
-
-            // 新增各個分類選項
-            Object.keys(foodData).forEach(category => {
-                const categoryContainer = document.createElement('div');
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = `cat-${category}`;
-                checkbox.value = category;
-                checkbox.className = 'custom-checkbox category-item';
-                const label = document.createElement('label');
-                label.htmlFor = `cat-${category}`;
-                label.textContent = category;
-                label.className = 'cursor-pointer';
-                categoryContainer.appendChild(checkbox);
-                categoryContainer.appendChild(label);
-                categoryCheckboxesContainer.appendChild(categoryContainer);
-            });
-        }
-
-        // 修改: 根據選擇的分類更新轉盤選項
-        function updateOptions() {
-            const selectedCategories = [];
-            document.querySelectorAll('#category-checkboxes .category-item:checked').forEach(checkbox => {
-                selectedCategories.push(checkbox.value);
-            });
-
-            if (selectedCategories.length > 0) {
-                options = selectedCategories.flatMap(category => foodData[category] || []);
-            } else {
-                options = [];
-            }
-            
-            arc = options.length > 0 ? 2 * Math.PI / options.length : 0;
-            currentAngle = 0; // 重設角度
-            drawRouletteWheel();
-        }
-
-        // 繪製轉盤 (RWD 優化)
-        function drawRouletteWheel() {
-            const logicalWidth = canvas.clientWidth;
-            const logicalHeight = canvas.clientHeight;
-            const centerX = logicalWidth / 2;
-            const centerY = logicalHeight / 2;
-            const outsideRadius = logicalWidth / 2 * 0.9;
-            const textRadius = outsideRadius * 0.65;
-
-            ctx.clearRect(0, 0, logicalWidth, logicalHeight);
-
-            if (!options || options.length === 0) {
-                ctx.save();
-                ctx.textAlign = 'center';
-                ctx.fillStyle = '#6B7280'; // gray-500
-                let fontSize = Math.max(12, Math.floor(logicalWidth / 20));
-                ctx.font = `bold ${fontSize}px "Noto Sans TC", sans-serif`;
-                ctx.fillText('請先選擇分類', centerX, centerY);
-                ctx.restore();
-                spinButton.disabled = true;
-                spinButton.classList.add('opacity-50', 'cursor-not-allowed');
-                return;
-            } else {
-                spinButton.disabled = isSpinning;
-                if (!isSpinning) {
-                    spinButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                }
-            }
-
-            ctx.strokeStyle = '#FFFFFF';
-            ctx.lineWidth = 2;
-
-            let fontSize = Math.max(10, Math.floor(logicalWidth / 30));
-            ctx.font = `bold ${fontSize}px "Noto Sans TC", sans-serif`;
-
-            for (let i = 0; i < options.length; i++) {
-                const angle = currentAngle + i * arc;
-                ctx.fillStyle = colors[i % colors.length];
-
-                ctx.beginPath();
-                ctx.moveTo(centerX, centerY);
-                ctx.arc(centerX, centerY, outsideRadius, angle, angle + arc, false);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-
-                ctx.save();
-                ctx.fillStyle = "white";
-                ctx.translate(centerX + Math.cos(angle + arc / 2) * textRadius,
-                    centerY + Math.sin(angle + arc / 2) * textRadius);
-                ctx.rotate(angle + arc / 2 + Math.PI / 2);
-
-                let text = options[i].name;
-                if (text.length > 6 && logicalWidth < 400) {
-                    text = text.substring(0, 5) + '…';
-                }
-
-                ctx.fillText(text, -ctx.measureText(text).width / 2, fontSize / 2);
-                ctx.restore();
-            }
-        }
-
-        function spin() {
-            if (isSpinning || options.length === 0) return;
-            isSpinning = true;
-            spinButton.disabled = true;
-            spinButton.classList.add('opacity-50', 'cursor-not-allowed');
-            resultDiv.style.opacity = 0;
-
-            spinAngleStart = Math.random() * 10 + 10;
-            spinTime = 0;
-            spinTimeTotal = Math.random() * 3000 + 4000;
-            rotateWheel();
-        }
-
-        function rotateWheel() {
-            spinTime += 30;
-            if (spinTime >= spinTimeTotal) {
-                stopRotateWheel();
-                return;
-            }
-            const spinAngle = spinAngleStart - easeOut(spinTime, 0, spinAngleStart, spinTimeTotal);
-            currentAngle += (spinAngle * Math.PI / 180);
-            drawRouletteWheel();
-            spinTimeout = requestAnimationFrame(rotateWheel);
-        }
-
-        function stopRotateWheel() {
-            cancelAnimationFrame(spinTimeout);
-            const degrees = currentAngle * 180 / Math.PI + 90;
-            const arcd = arc * 180 / Math.PI;
-            const index = Math.floor((360 - degrees % 360) / arcd);
-
-            const selected = options[index];
-
-            resultName.textContent = selected.name;
-            resultDescription.textContent = selected.description;
-            if (selected.url) {
-                resultLink.href = selected.url;
-                resultLink.classList.remove('hidden');
-            } else {
-                resultLink.classList.add('hidden');
-            }
-            resultDiv.style.opacity = 1;
-
-            isSpinning = false;
-            spinButton.disabled = false;
-            spinButton.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-
-        function easeOut(t, b, c, d) {
-            const ts = (t /= d) * t;
-            const tc = ts * t;
-            return b + c * (tc + -3 * ts + 3 * t);
-        }
-
-        function resizeCanvas() {
-            const container = canvas.parentElement;
-            const size = container.clientWidth;
-            const dpr = window.devicePixelRatio || 1;
-
-            canvas.style.width = `${size}px`;
-            canvas.style.height = `${size}px`;
-            canvas.width = size * dpr;
-            canvas.height = size * dpr;
-            ctx.scale(dpr, dpr);
-
-            drawRouletteWheel();
-        }
-        
-        // 修改: 事件監聽
-        function setupEventListeners() {
-            spinButton.addEventListener("click", spin);
-            window.addEventListener('resize', resizeCanvas);
-
-            const selectAllCheckbox = document.getElementById('select-all');
-            const categoryCheckboxes = document.querySelectorAll('.category-item');
-
-            // 監聽「全選」的變化
-            selectAllCheckbox.addEventListener('change', () => {
-                categoryCheckboxes.forEach(checkbox => {
-                    checkbox.checked = selectAllCheckbox.checked;
-                });
-                updateOptions();
-            });
-
-            // 監聽各個分類的變化
-            categoryCheckboxesContainer.addEventListener('change', (e) => {
-                if (e.target.classList.contains('category-item')) {
-                    const allChecked = [...categoryCheckboxes].every(checkbox => checkbox.checked);
-                    selectAllCheckbox.checked = allChecked;
-                    updateOptions();
-                }
-            });
-        }
-
-
-        // 初始化
-        populateCategories();
-        setupEventListeners();
-        updateOptions(); // 初始載入時更新一次，確保轉盤是空的
-        resizeCanvas();
-        
-        resultName.textContent = "今天吃什麼？";
-        resultDescription.textContent = "從上方勾選美食分類，然後點擊「轉！」按鈕！";
-        resultDiv.style.opacity = 1;
-        resultLink.classList.add('hidden');
-
-    </script>
-    <footer class="text-center text-xs text-gray-500 mt-8">
+    <footer class="text-center text-xs text-gray-500 mt-8 pb-4">
         <p>
             感謝 <a href="https://www.instagram.com/nick.wu_07.29/" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">nick.wu_07.29</a> 熱情提供美食地圖，
             並由 <a href="https://www.instagram.com/lie.1131/" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">lie.1131</a> 完成整體的網頁設計與內容撰寫。
         </p>
         <p class="mt-2">© <script>document.write(new Date().getFullYear())</script> YunlinFood. All Rights Reserved.</p>
     </footer>
-</body>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 從我們的 API Worker 載入初始資料
+            fetch('/api/restaurants')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`API 請求失敗！狀態: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(foodData => {
+                    initializeApp(foodData);
+                })
+                .catch(error => {
+                    console.error('無法從 API 載入餐廳資料:', error);
+                    const categoryCheckboxesContainer = document.getElementById('category-checkboxes');
+                    categoryCheckboxesContainer.innerHTML = `<p class="col-span-full text-center text-red-500">美食清單載入失敗！<br>請確認後端 Function 是否已成功部署。</p>`;
+                });
+
+            function initializeApp(foodData) {
+                // --- DOM 元素宣告 ---
+                const canvas = document.getElementById('wheelCanvas');
+                const ctx = canvas.getContext('2d');
+                const spinButton = document.getElementById('spinButton');
+                const categoryCheckboxesContainer = document.getElementById('category-checkboxes');
+                const resultDiv = document.getElementById('result');
+                const resultName = document.getElementById('result-name');
+                const resultDescription = document.getElementById('result-description');
+                const resultLink = document.getElementById('result-link');
+                const addRestaurantModal = document.getElementById('addRestaurantModal');
+                const addRestaurantBtn = document.getElementById('addRestaurantBtn');
+                const cancelAddBtn = document.getElementById('cancelAddBtn');
+                const addRestaurantForm = document.getElementById('addRestaurantForm');
+                const restaurantCategorySelect = document.getElementById('restaurantCategory');
+
+                // --- 應用程式狀態變數 ---
+                let options = [];
+                let arc;
+                let spinTimeout = null;
+                let spinAngleStart;
+                let spinTime = 0;
+                let spinTimeTotal = 0;
+                let isSpinning = false;
+                let currentAngle = 0;
+                const colors = ["#F87171", "#60A5FA", "#34D399", "#FBBF24", "#A78BFA", "#F472B6", "#FB923C", "#2DD4BF"];
+
+                // --- 函式定義 ---
+
+                function populateCategories() {
+                    categoryCheckboxesContainer.innerHTML = '';
+                    restaurantCategorySelect.innerHTML = '';
+
+                    const selectAllContainer = document.createElement('div');
+                    selectAllContainer.className = 'font-bold text-blue-600 dark:text-blue-400';
+                    const selectAllCheckbox = document.createElement('input');
+                    selectAllCheckbox.type = 'checkbox';
+                    selectAllCheckbox.id = 'select-all';
+                    selectAllCheckbox.value = 'all';
+                    selectAllCheckbox.className = 'custom-checkbox';
+                    const selectAllLabel = document.createElement('label');
+                    selectAllLabel.htmlFor = 'select-all';
+                    selectAllLabel.textContent = '全選';
+                    selectAllLabel.className = 'cursor-pointer';
+                    selectAllContainer.appendChild(selectAllCheckbox);
+                    selectAllContainer.appendChild(selectAllLabel);
+                    categoryCheckboxesContainer.appendChild(selectAllContainer);
+
+                    const categories = Object.keys(foodData).sort(); // 排序分類
+                    categories.forEach(category => {
+                        const categoryContainer = document.createElement('div');
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.id = `cat-${category}`;
+                        checkbox.value = category;
+                        checkbox.className = 'custom-checkbox category-item';
+                        const label = document.createElement('label');
+                        label.htmlFor = `cat-${category}`;
+                        label.textContent = category;
+                        label.className = 'cursor-pointer';
+                        categoryContainer.appendChild(checkbox);
+                        categoryContainer.appendChild(label);
+                        categoryCheckboxesContainer.appendChild(categoryContainer);
+
+                        const optionElement = document.createElement('option');
+                        optionElement.value = category;
+                        optionElement.textContent = category;
+                        restaurantCategorySelect.appendChild(optionElement);
+                    });
+                }
+
+                function updateOptions() {
+                    const selectedCategories = [];
+                    document.querySelectorAll('#category-checkboxes .category-item:checked').forEach(checkbox => {
+                        selectedCategories.push(checkbox.value);
+                    });
+                    options = selectedCategories.flatMap(category => foodData[category] || []);
+                    arc = options.length > 0 ? 2 * Math.PI / options.length : 0;
+                    drawRouletteWheel();
+                }
+
+                function drawRouletteWheel() {
+                    const logicalWidth = canvas.clientWidth;
+                    const logicalHeight = canvas.clientHeight;
+                    const centerX = logicalWidth / 2;
+                    const centerY = logicalHeight / 2;
+                    const outsideRadius = logicalWidth / 2 * 0.9;
+                    const textRadius = outsideRadius * 0.65;
+                    ctx.clearRect(0, 0, logicalWidth, logicalHeight);
+
+                    if (options.length === 0) {
+                        ctx.save();
+                        ctx.textAlign = 'center';
+                        ctx.fillStyle = '#6B7280';
+                        let fontSize = Math.max(12, Math.floor(logicalWidth / 20));
+                        ctx.font = `bold ${fontSize}px "Noto Sans TC", sans-serif`;
+                        ctx.fillText('請先選擇分類', centerX, centerY);
+                        ctx.restore();
+                        spinButton.disabled = true;
+                        spinButton.classList.add('opacity-50', 'cursor-not-allowed');
+                        return;
+                    }
+                    
+                    spinButton.disabled = isSpinning;
+                    spinButton.classList.toggle('opacity-50', isSpinning);
+                    spinButton.classList.toggle('cursor-not-allowed', isSpinning);
+
+                    ctx.strokeStyle = '#FFFFFF';
+                    ctx.lineWidth = 2;
+                    let fontSize = Math.max(10, Math.floor(logicalWidth / 30));
+                    if (options.length > 15) fontSize = Math.max(8, Math.floor(logicalWidth / 35));
+                    if (options.length > 30) fontSize = Math.max(6, Math.floor(logicalWidth / 45));
+                    ctx.font = `bold ${fontSize}px "Noto Sans TC", sans-serif`;
+
+                    for (let i = 0; i < options.length; i++) {
+                        const angle = currentAngle + i * arc;
+                        ctx.fillStyle = colors[i % colors.length];
+                        ctx.beginPath();
+                        ctx.moveTo(centerX, centerY);
+                        ctx.arc(centerX, centerY, outsideRadius, angle, angle + arc, false);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
+                        ctx.save();
+                        ctx.fillStyle = "white";
+                        ctx.translate(centerX + Math.cos(angle + arc / 2) * textRadius, centerY + Math.sin(angle + arc / 2) * textRadius);
+                        ctx.rotate(angle + arc / 2 + Math.PI / 2);
+                        let text = options[i].name;
+                        const maxTextLength = Math.floor(textRadius / fontSize) * 1.2;
+                        if (text.length > maxTextLength) {
+                            text = text.substring(0, maxTextLength - 1) + '…';
+                        }
+                        ctx.fillText(text, -ctx.measureText(text).width / 2, fontSize / 2);
+                        ctx.restore();
+                    }
+                }
+
+                function spin() {
+                    if (isSpinning || options.length === 0) return;
+                    isSpinning = true;
+                    spinButton.disabled = true;
+                    spinButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    resultDiv.style.opacity = 0;
+                    spinAngleStart = Math.random() * 10 + 10;
+                    spinTime = 0;
+                    spinTimeTotal = Math.random() * 3000 + 4000;
+                    rotateWheel();
+                }
+
+                function rotateWheel() {
+                    spinTime += 30;
+                    if (spinTime >= spinTimeTotal) {
+                        stopRotateWheel();
+                        return;
+                    }
+                    const spinAngle = spinAngleStart - easeOut(spinTime, 0, spinAngleStart, spinTimeTotal);
+                    currentAngle += (spinAngle * Math.PI / 180);
+                    drawRouletteWheel();
+                    spinTimeout = requestAnimationFrame(rotateWheel);
+                }
+
+                function stopRotateWheel() {
+                    cancelAnimationFrame(spinTimeout);
+                    const degrees = currentAngle * 180 / Math.PI + 90;
+                    const arcd = arc * 180 / Math.PI;
+                    const index = Math.floor((360 - degrees % 360) / arcd);
+                    const selected = options[index];
+
+                    if (selected) {
+                        resultName.textContent = selected.name;
+                        resultDescription.textContent = selected.description;
+                        resultLink.href = selected.url;
+                        resultLink.classList.toggle('hidden', !selected.url);
+                    }
+                    
+                    resultDiv.style.opacity = 1;
+                    isSpinning = false;
+                    spinButton.disabled = false;
+                    spinButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+
+                function easeOut(t, b, c, d) {
+                    const ts = (t /= d) * t;
+                    const tc = ts * t;
+                    return b + c * (tc + -3 * ts + 3 * t);
+                }
+
+                function resizeCanvas() {
+                    const container = canvas.parentElement;
+                    const size = container.clientWidth;
+                    const dpr = window.devicePixelRatio || 1;
+                    canvas.style.width = `${size}px`;
+                    canvas.style.height = `${size}px`;
+                    canvas.width = size * dpr;
+                    canvas.height = size * dpr;
+                    drawRouletteWheel();
+                }
+
+                function setupEventListeners() {
+                    spinButton.addEventListener("click", spin);
+                    window.addEventListener('resize', resizeCanvas);
+                    addRestaurantBtn.addEventListener('click', () => addRestaurantModal.classList.remove('hidden'));
+                    cancelAddBtn.addEventListener('click', () => addRestaurantModal.classList.add('hidden'));
+
+                    // 修改表單提交邏輯，改為呼叫後端 API
+                    addRestaurantForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        const newRestaurant = {
+                            name: e.target.restaurantName.value,
+                            description: e.target.restaurantDescription.value || '我剛推薦的私藏好店！',
+                            url: e.target.restaurantUrl.value
+                        };
+                        const category = e.target.restaurantCategory.value;
+
+                        const submitButton = e.target.querySelector('button[type="submit"]');
+                        submitButton.disabled = true;
+                        submitButton.textContent = '送出中...';
+
+                        // 使用 fetch 將資料 POST 到後端 Worker
+                        fetch('/api/restaurants', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                restaurant: newRestaurant,
+                                category: category
+                            }),
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert(`成功新增餐廳「${newRestaurant.name}」！\n頁面將自動重新整理。`);
+                                window.location.reload(); 
+                            } else {
+                                throw new Error(data.message || '未知的錯誤');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('API 新增請求錯誤:', error);
+                            alert('新增失敗：' + error.message);
+                            submitButton.disabled = false;
+                            submitButton.textContent = '送出推薦';
+                        });
+                    });
+                    
+                    const selectAllCheckbox = document.getElementById('select-all');
+                    selectAllCheckbox.addEventListener('change', () => {
+                        const categoryCheckboxes = document.querySelectorAll('.category-item');
+                        categoryCheckboxes.forEach(checkbox => {
+                            checkbox.checked = selectAllCheckbox.checked;
+                        });
+                        updateOptions();
+                    });
+
+                    categoryCheckboxesContainer.addEventListener('change', (e) => {
+                        if (e.target.classList.contains('category-item')) {
+                            const allChecked = [...document.querySelectorAll('.category-item')].every(checkbox => checkbox.checked);
+                            selectAllCheckbox.checked = allChecked;
+                            updateOptions();
+                        }
+                    });
+                }
+
+                // --- 程式進入點 ---
+                populateCategories();
+                setupEventListeners();
+                updateOptions();
+                resizeCanvas();
+                
+                resultName.textContent = "今天吃什麼？";
+                resultDescription.textContent = "從上方勾選美食分類，然後點擊「轉！」按鈕！";
+                resultDiv.style.opacity = 1;
+                resultLink.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
 </html>
