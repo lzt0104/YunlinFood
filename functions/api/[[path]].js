@@ -5,16 +5,19 @@ export async function onRequest(context) {
     const { request, env } = context;
 
     // 從環境變數中取得我們綁定的 KV 資料庫
-    // *** 您需要在 Cloudflare Pages 的設定中，將 KV 命名空間綁定到這個專案 ***
-    // *** 綁定後的變數名稱就是 "FOOD_WHEEL_DB" ***
     const db = env.FOOD_WHEEL_DB;
+    // 取得我們綁定用於「日誌」的 KV 資料庫
+    const logDb = env.yunlinfood_log;
 
     // 處理 GET 請求：取得所有餐廳資料
     if (request.method === "GET") {
         try {
             const foodDataJson = await db.get("restaurants");
             if (!foodDataJson) {
-                return new Response("找不到餐廳資料", { status: 404 });
+                // 如果沒有資料，回傳一個空的 JSON 物件，讓前端可以正常解析
+                return new Response("{}", {
+                    headers: { 'Content-Type': 'application/json' }
+                });
             }
             const headers = { 'Content-Type': 'application/json' };
             return new Response(foodDataJson, { headers });
@@ -28,7 +31,7 @@ export async function onRequest(context) {
         try {
             const { restaurant, category } = await request.json();
 
-            if (!restaurant || !category) {
+            if (!restaurant || !restaurant.name || !category) {
                 return new Response("新增的資料不完整", { status: 400 });
             }
 
@@ -46,12 +49,35 @@ export async function onRequest(context) {
             // 3. 將更新後的完整資料寫回 KV
             await db.put("restaurants", JSON.stringify(foodData));
 
+            // --- ✨ 新增日誌記錄到 KV ---
+            // 確認日誌資料庫的綁定存在
+            if (logDb) {
+                const timestamp = new Date().toISOString();
+                const logKey = `${timestamp}-${crypto.randomUUID()}`;
+
+                const logValue = JSON.stringify({
+                    timestamp: timestamp,
+                    ipAddress: request.headers.get('cf-connecting-ip'), // 獲取真實訪客 IP
+                    restaurantName: restaurant.name,
+                    category: category,
+                    description: restaurant.description,
+                    url: restaurant.url,
+                    userAgent: request.headers.get('user-agent') // 記錄 User Agent
+                });
+
+                // 使用 put() 方法將日誌寫入 yunlinfood_log
+                // 使用 ctx.waitUntil 來確保即使在回傳回應後，寫入操作也能完成
+                context.waitUntil(logDb.put(logKey, logValue));
+            }
+            // --- ✨ 日誌記錄結束 ---
+
             return new Response(JSON.stringify({ success: true, message: "新增成功" }), {
                 headers: { 'Content-Type': 'application/json' },
             });
 
         } catch (err) {
-             return new Response(err.toString(), { status: 500 });
+            console.error(err); // 在後台印出詳細錯誤
+            return new Response(err.toString(), { status: 500 });
         }
     }
 
