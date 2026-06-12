@@ -386,6 +386,73 @@
         }
         .map-btn.hidden { display: none; }
 
+        /* Embedded map */
+        .map-embed-card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 1.25rem;
+            overflow: hidden;
+            display: none;
+            flex-direction: column;
+            animation: map-slide-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .map-embed-card.visible { display: flex; }
+        @keyframes map-slide-in {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .map-embed-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .map-embed-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .map-open-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--accent);
+            text-decoration: none;
+            padding: 0.25rem 0.65rem;
+            border-radius: 999px;
+            border: 1px solid rgba(249,115,22,0.3);
+            transition: all 0.2s;
+        }
+        .map-open-link:hover {
+            background: rgba(249,115,22,0.12);
+        }
+        .map-open-link.hidden { display: none; }
+        #mapIframe {
+            width: 100%;
+            height: 280px;
+            border: none;
+            display: block;
+        }
+        .map-loading {
+            height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            gap: 0.5rem;
+        }
+
         /* Confetti burst */
         @keyframes confetti-fall {
             0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
@@ -640,10 +707,25 @@
                 <div class="result-label" id="result-label">今天吃什麼？</div>
                 <div id="result-name" class="result-default">從左側勾選分類</div>
                 <div id="result-description" class="result-default">然後點擊「轉！」按鈕決定今日美食！</div>
-                <a id="result-link" href="#" target="_blank" rel="noopener noreferrer" class="map-btn hidden">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-                    前往地圖
-                </a>
+            </div>
+
+            <!-- Embedded map -->
+            <div class="map-embed-card" id="mapEmbedCard">
+                <div class="map-embed-header">
+                    <div class="map-embed-title">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+                        附近地圖
+                    </div>
+                    <a id="mapOpenLink" href="#" target="_blank" rel="noopener noreferrer" class="map-open-link hidden">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        另開地圖
+                    </a>
+                </div>
+                <div class="map-loading" id="mapLoading">
+                    <div class="loading-dots"><span></span><span></span><span></span></div>
+                    載入地圖中…
+                </div>
+                <iframe id="mapIframe" style="display:none" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
         </div>
 
@@ -724,7 +806,10 @@ function initApp(foodData) {
     const resultLabel = document.getElementById('result-label');
     const resultName = document.getElementById('result-name');
     const resultDesc = document.getElementById('result-description');
-    const resultLink = document.getElementById('result-link');
+    const mapEmbedCard = document.getElementById('mapEmbedCard');
+    const mapIframe = document.getElementById('mapIframe');
+    const mapLoading = document.getElementById('mapLoading');
+    const mapOpenLink = document.getElementById('mapOpenLink');
     const countDisplay = document.getElementById('count-display');
     const modal = document.getElementById('addRestaurantModal');
     const catSelect = document.getElementById('restaurantCategory');
@@ -965,24 +1050,50 @@ function initApp(foodData) {
         resultDesc.textContent = item.description || '去吃吧！';
         resultDesc.className = '';
 
-        if (item.url) {
-            resultLink.href = item.url;
-            resultLink.classList.remove('hidden');
-        } else {
-            resultLink.classList.add('hidden');
-        }
-
         resultCard.classList.add('has-result');
-        // Trigger animation
         void resultCard.offsetWidth;
         resultCard.classList.add('animating');
 
         spawnConfetti();
+        showMap(item);
 
-        // On mobile scroll to result
         if (window.innerWidth < 768) {
-            setTimeout(() => resultCard.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+            setTimeout(() => mapEmbedCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 300);
         }
+    }
+
+    // --- Embedded map ---
+    function showMap(item) {
+        mapEmbedCard.classList.add('visible');
+        mapIframe.style.display = 'none';
+        mapLoading.style.display = 'flex';
+
+        // Build embed URL from the item's Maps URL or fall back to name search
+        let embedSrc;
+        if (item.url && item.url.startsWith('https://maps.app.goo.gl/')) {
+            // Use place search by name as Google short links can't be embedded directly
+            embedSrc = `https://maps.google.com/maps?q=${encodeURIComponent(item.name)}&output=embed&hl=zh-TW`;
+        } else if (item.url && item.url.includes('google.com/maps')) {
+            // Try to convert long-form URL to embed
+            embedSrc = item.url.replace('/maps/', '/maps/embed/') + '&hl=zh-TW';
+        } else {
+            embedSrc = `https://maps.google.com/maps?q=${encodeURIComponent(item.name + ' 斗六')}&output=embed&hl=zh-TW`;
+        }
+
+        // "Open in Maps" link
+        if (item.url) {
+            mapOpenLink.href = item.url;
+            mapOpenLink.classList.remove('hidden');
+        } else {
+            mapOpenLink.href = `https://maps.google.com/maps?q=${encodeURIComponent(item.name + ' 斗六')}`;
+            mapOpenLink.classList.remove('hidden');
+        }
+
+        mapIframe.onload = () => {
+            mapLoading.style.display = 'none';
+            mapIframe.style.display = 'block';
+        };
+        mapIframe.src = embedSrc;
     }
 
     // --- Confetti ---
