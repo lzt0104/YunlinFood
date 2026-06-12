@@ -3,330 +3,1073 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>美食天降轉盤</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>美食天降轉盤 🎡</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Sans TC', sans-serif; touch-action: manipulation; }
-        canvas { -webkit-tap-highlight-color: transparent; }
-        .spin-button { transition: transform 0.1s ease, box-shadow 0.1s ease; }
-        .spin-button:active { transform: scale(0.95); box-shadow: 0 0 15px rgba(59, 130, 246, 0.7); }
-        .custom-checkbox { appearance: none; background-color: #fff; border: 1px solid #ccc; border-radius: 4px; width: 1.25em; height: 1.25em; cursor: pointer; position: relative; top: 0.2em; margin-right: 0.5em; transition: background-color 0.2s, border-color 0.2s; }
-        .dark .custom-checkbox { background-color: #4B5563; border-color: #6B7280; }
-        .custom-checkbox:checked { background-color: #3B82F6; border-color: #3B82F6; }
-        .custom-checkbox:checked::after { content: '✔'; font-size: 0.8em; color: white; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+        :root {
+            --bg: #0f0f1a;
+            --surface: #1a1a2e;
+            --surface2: #16213e;
+            --border: rgba(255,255,255,0.08);
+            --accent: #f97316;
+            --accent2: #fb923c;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --success: #22c55e;
+            --pill-bg: rgba(249,115,22,0.12);
+            --pill-active: #f97316;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+
+        /* Stars bg */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.4) 0%, transparent 100%),
+                radial-gradient(1px 1px at 70% 15%, rgba(255,255,255,0.3) 0%, transparent 100%),
+                radial-gradient(1px 1px at 40% 60%, rgba(255,255,255,0.2) 0%, transparent 100%),
+                radial-gradient(1px 1px at 85% 50%, rgba(255,255,255,0.3) 0%, transparent 100%),
+                radial-gradient(1px 1px at 10% 80%, rgba(255,255,255,0.2) 0%, transparent 100%),
+                radial-gradient(2px 2px at 55% 85%, rgba(249,115,22,0.4) 0%, transparent 100%),
+                radial-gradient(2px 2px at 30% 5%, rgba(249,115,22,0.3) 0%, transparent 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .page-wrapper {
+            position: relative;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem 1rem 4rem;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+        .header-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #f97316, #f59e0b);
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            padding: 0.3rem 0.9rem;
+            border-radius: 999px;
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+        }
+        h1 {
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            font-weight: 900;
+            background: linear-gradient(135deg, #fff 30%, #f97316);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.1;
+            margin-bottom: 0.5rem;
+        }
+        .header p {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        /* Main layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 1.5rem;
+            align-items: start;
+        }
+        @media (max-width: 768px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 1.25rem;
+            padding: 1.25rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .card-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        /* Category Pills */
+        .pills-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .pill:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .pill.active {
+            background: linear-gradient(135deg, #f97316, #f59e0b);
+            border-color: transparent;
+            color: #fff;
+            box-shadow: 0 0 12px rgba(249,115,22,0.4);
+        }
+        .pill-all {
+            font-weight: 700;
+            font-size: 0.75rem;
+        }
+
+        /* Count badge */
+        .count-display {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+        .count-display span {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        /* Recommend button */
+        .recommend-btn {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.875rem;
+            border: 1px solid rgba(249,115,22,0.3);
+            background: rgba(249,115,22,0.08);
+            color: var(--accent);
+            font-size: 0.875rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+        }
+        .recommend-btn:hover {
+            background: rgba(249,115,22,0.18);
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        /* Wheel area */
+        .wheel-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .wheel-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+        }
+
+        /* Glow ring around wheel */
+        .wheel-glow {
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, #f97316, #f59e0b, #84cc16, #06b6d4, #8b5cf6, #ec4899, #f97316);
+            opacity: 0;
+            filter: blur(16px);
+            transition: opacity 0.4s ease;
+            z-index: 0;
+        }
+        .wheel-wrapper.spinning .wheel-glow { opacity: 0.5; }
+
+        canvas {
+            display: block;
+            width: 100%;
+            aspect-ratio: 1;
+            position: relative;
+            z-index: 1;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Pointer */
+        .wheel-pointer {
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+        }
+        .wheel-pointer svg {
+            width: 32px;
+            height: 40px;
+        }
+
+        /* Spin button */
+        .spin-btn-wrap {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+        .spin-btn {
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            border: 4px solid rgba(255,255,255,0.15);
+            background: linear-gradient(135deg, #f97316, #f59e0b);
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 900;
+            font-family: inherit;
+            cursor: pointer;
+            box-shadow:
+                0 0 0 4px rgba(249,115,22,0.2),
+                0 8px 24px rgba(249,115,22,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.3);
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .spin-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 50%);
+        }
+        .spin-btn:hover:not(:disabled) {
+            transform: scale(1.06);
+            box-shadow:
+                0 0 0 4px rgba(249,115,22,0.3),
+                0 12px 32px rgba(249,115,22,0.6),
+                inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+        .spin-btn:active:not(:disabled) {
+            transform: scale(0.94);
+        }
+        .spin-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Wheel spinning animation */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 0 4px rgba(249,115,22,0.2), 0 8px 24px rgba(249,115,22,0.4), inset 0 1px 0 rgba(255,255,255,0.3); }
+            50% { box-shadow: 0 0 0 8px rgba(249,115,22,0.3), 0 16px 40px rgba(249,115,22,0.7), inset 0 1px 0 rgba(255,255,255,0.3); }
+        }
+        .wheel-wrapper.spinning .spin-btn {
+            animation: pulse-glow 1s ease-in-out infinite;
+        }
+
+        /* Result card */
+        .result-card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .result-card.has-result {
+            border-color: rgba(249,115,22,0.4);
+            box-shadow: 0 0 40px rgba(249,115,22,0.15);
+        }
+        .result-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #f97316, transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .result-card.has-result::before { opacity: 1; }
+
+        .result-emoji {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        .result-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+        #result-name {
+            font-size: clamp(1.25rem, 3vw, 1.75rem);
+            font-weight: 900;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
+        }
+        #result-description {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+        .result-default {
+            color: var(--text-muted);
+        }
+
+        .map-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.6rem 1.5rem;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #fff;
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-decoration: none;
+            box-shadow: 0 4px 16px rgba(34,197,94,0.35);
+            transition: all 0.2s ease;
+        }
+        .map-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(34,197,94,0.5);
+        }
+        .map-btn.hidden { display: none; }
+
+        /* Confetti burst */
+        @keyframes confetti-fall {
+            0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+            100% { transform: translate(var(--tx), 80px) rotate(var(--rot)); opacity: 0; }
+        }
+        .confetti-piece {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+            pointer-events: none;
+            animation: confetti-fall 0.8s ease-out forwards;
+        }
+
+        /* Result bounce animation */
+        @keyframes result-bounce {
+            0% { transform: scale(0.8); opacity: 0; }
+            60% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .result-card.animating #result-name {
+            animation: result-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .modal {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            width: 100%;
+            max-width: 460px;
+            transform: translateY(20px) scale(0.97);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+        }
+        .modal-overlay.open .modal {
+            transform: translateY(0) scale(1);
+        }
+        .modal h2 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .modal-close {
+            position: absolute;
+            top: 1.25rem;
+            right: 1.25rem;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.08);
+            color: var(--text-muted);
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .modal-close:hover {
+            background: rgba(255,255,255,0.15);
+            color: var(--text);
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .form-group label .req { color: #f87171; }
+        .form-control {
+            width: 100%;
+            padding: 0.65rem 0.9rem;
+            border-radius: 0.75rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: var(--text);
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+        .form-control:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(249,115,22,0.2);
+        }
+        .form-control::placeholder { color: rgba(255,255,255,0.2); }
+        select.form-control option { background: #1a1a2e; }
+
+        .form-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+        .btn-secondary {
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.75rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: transparent;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+        .btn-primary {
+            padding: 0.6rem 1.5rem;
+            border-radius: 0.75rem;
+            border: none;
+            background: linear-gradient(135deg, #f97316, #f59e0b);
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(249,115,22,0.35);
+            transition: all 0.2s;
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(249,115,22,0.5); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            color: rgba(255,255,255,0.2);
+            font-size: 0.75rem;
+        }
+
+        /* Loading state */
+        .loading-dots {
+            display: inline-flex;
+            gap: 4px;
+            align-items: center;
+        }
+        .loading-dots span {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            animation: dot-bounce 1.2s infinite;
+        }
+        .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes dot-bounce {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Responsive tweaks */
+        @media (max-width: 480px) {
+            .page-wrapper { padding: 1.25rem 0.75rem 3rem; }
+            .card { padding: 1rem; }
+        }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen flex flex-col items-center justify-center p-4">
+<body>
+<div class="page-wrapper">
 
-    <div class="w-full max-w-2xl text-center">
-        <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-2">美食天降轉盤</h1>
-        <p class="text-md sm:text-lg text-gray-600 dark:text-gray-400 mb-6">解決你的選擇困難症！</p>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-badge">🍜 雲林美食地圖</div>
+        <h1>美食天降轉盤</h1>
+        <p>選擇困難症救星 · 轉出今日命定美食</p>
+    </header>
 
-        <div class="mb-4 text-left">
-            <label class="block text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">選擇美食分類 (可複選):</label>
-            <div id="category-container" class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg p-4 shadow-md max-h-48 overflow-y-auto">
-                <div id="category-checkboxes" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-2">
-                    <p class="col-span-full text-center text-gray-500">正在從資料庫載入美食清單...</p>
+    <!-- Main -->
+    <div class="main-grid">
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="card">
+                <div class="card-label">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+                    選擇分類
                 </div>
+                <div id="pills-container" class="pills-wrap">
+                    <div class="loading-dots"><span></span><span></span><span></span></div>
+                </div>
+                <div class="count-display" id="count-display"></div>
             </div>
-        </div>
 
-        <div class="mb-6 text-left">
-            <button id="addRestaurantBtn" class="w-full bg-rose-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-rose-600 transition-colors duration-300 shadow-md">
-                ❤️ 推薦你的私藏餐廳
+            <button class="recommend-btn" id="addRestaurantBtn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                推薦私藏餐廳
             </button>
-        </div>
-        
-        <div class="relative w-full max-w-md mx-auto aspect-square">
-            <canvas id="wheelCanvas"></canvas>
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
-                <button id="spinButton" class="spin-button w-20 h-20 bg-blue-600 dark:bg-blue-500 text-white font-bold text-2xl rounded-full shadow-lg border-4 border-white dark:border-gray-800 focus:outline-none">轉！</button>
+        </aside>
+
+        <!-- Wheel + Result -->
+        <div class="wheel-area">
+            <div class="wheel-wrapper" id="wheelWrapper">
+                <div class="wheel-glow"></div>
+                <!-- Pointer -->
+                <div class="wheel-pointer">
+                    <svg viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <filter id="shadow">
+                            <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.6)"/>
+                        </filter>
+                        <path d="M16 38 L3 6 Q16 0 29 6 Z" fill="url(#ptr-grad)" filter="url(#shadow)"/>
+                        <defs>
+                            <linearGradient id="ptr-grad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#f97316"/>
+                                <stop offset="100%" stop-color="#dc2626"/>
+                            </linearGradient>
+                        </defs>
+                        <circle cx="16" cy="6" r="4" fill="#fff" opacity="0.9"/>
+                    </svg>
+                </div>
+
+                <canvas id="wheelCanvas"></canvas>
+
+                <div class="spin-btn-wrap">
+                    <button id="spinButton" class="spin-btn">轉！</button>
+                </div>
             </div>
-            <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2/3" style="width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 30px solid #f59e0b;"></div>
+
+            <!-- Result card -->
+            <div class="result-card" id="resultCard">
+                <span class="result-emoji" id="result-emoji">🎡</span>
+                <div class="result-label" id="result-label">今天吃什麼？</div>
+                <div id="result-name" class="result-default">從左側勾選分類</div>
+                <div id="result-description" class="result-default">然後點擊「轉！」按鈕決定今日美食！</div>
+                <a id="result-link" href="#" target="_blank" rel="noopener noreferrer" class="map-btn hidden">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+                    前往地圖
+                </a>
+            </div>
         </div>
 
-        <div id="result" class="mt-8 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg min-h-[150px] flex flex-col items-center justify-center transition-opacity duration-500 opacity-0">
-            <h2 id="result-name" class="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400 text-center"></h2>
-            <p id="result-description" class="mt-2 text-base md:text-lg text-gray-600 dark:text-gray-300 text-center"></p>
-            <a id="result-link" href="#" target="_blank" rel="noopener noreferrer" class="mt-4 inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition-colors duration-300 hidden">
-                📍 前往地圖
-            </a>
-        </div>
     </div>
 
-    <div id="addRestaurantModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60" style="display: none;">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-2xl p-6 w-full max-w-md m-4">
-            <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">推薦您的私藏餐廳</h2>
-            <form id="addRestaurantForm">
-                <div class="mb-4">
-                    <label for="restaurantName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">餐廳名稱 <span class="text-red-500">*</span></label>
-                    <input type="text" id="restaurantName" name="restaurantName" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700">
-                </div>
-                <div class="mb-4">
-                    <label for="restaurantCategory" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">美食分類 <span class="text-red-500">*</span></label>
-                    <select id="restaurantCategory" name="restaurantCategory" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700"></select>
-                </div>
-                <div class="mb-4">
-                    <label for="restaurantDescription" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">推薦理由</label>
-                    <textarea id="restaurantDescription" name="restaurantDescription" rows="3" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700"></textarea>
-                </div>
-                 <div class="mb-6">
-                    <label for="restaurantUrl" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Google Maps 網址</label>
-                    <input type="url" id="restaurantUrl" name="restaurantUrl" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700" placeholder="https://maps.app.goo.gl/...">
-                </div>
-                <div class="flex justify-end space-x-4">
-                    <button type="button" id="cancelAddBtn" class="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">取消</button>
-                    <button type="submit"
-                        class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors">送出推薦</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <footer class="text-center text-xs text-gray-500 mt-8 pb-4">
-        <p class="mt-2">© <script>document.write(new Date().getFullYear())</script> YunlinFood. All Rights Reserved.</p>
+    <!-- Footer -->
+    <footer>
+        <p>© <script>document.write(new Date().getFullYear())</script> YunlinFood · All Rights Reserved</p>
     </footer>
+</div>
 
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        fetch('/api/restaurants')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`API 請求失敗！狀態: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(foodData => {
-                initializeApp(foodData);
-            })
-            .catch(error => {
-                console.error('無法從 API 載入餐廳資料:', error);
-                const categoryCheckboxesContainer = document.getElementById('category-checkboxes');
-                categoryCheckboxesContainer.innerHTML = `<p class="col-span-full text-center text-red-500">美食清單載入失敗！<br>請確認後端 Function 是否已成功部署。</p>`;
-            });
+<!-- Modal -->
+<div id="addRestaurantModal" class="modal-overlay">
+    <div class="modal">
+        <button class="modal-close" id="cancelAddBtn">✕</button>
+        <h2>❤️ 推薦私藏餐廳</h2>
+        <form id="addRestaurantForm">
+            <div class="form-group">
+                <label>餐廳名稱 <span class="req">*</span></label>
+                <input type="text" id="restaurantName" name="restaurantName" required class="form-control" placeholder="e.g. 老謝牛肉麵">
+            </div>
+            <div class="form-group">
+                <label>美食分類 <span class="req">*</span></label>
+                <select id="restaurantCategory" name="restaurantCategory" required class="form-control"></select>
+            </div>
+            <div class="form-group">
+                <label>推薦理由</label>
+                <textarea id="restaurantDescription" name="restaurantDescription" rows="3" class="form-control" placeholder="這家的招牌是..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Google Maps 網址</label>
+                <input type="url" id="restaurantUrl" name="restaurantUrl" class="form-control" placeholder="https://maps.app.goo.gl/...">
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" id="cancelAddBtn2">取消</button>
+                <button type="submit" class="btn-primary" id="submitBtn">送出推薦</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-        function initializeApp(foodData) {
-            const canvas = document.getElementById('wheelCanvas');
-            const ctx = canvas.getContext('2d');
-            const spinButton = document.getElementById('spinButton');
-            const categoryCheckboxesContainer = document.getElementById('category-checkboxes');
-            const resultDiv = document.getElementById('result');
-            const resultName = document.getElementById('result-name');
-            const resultDescription = document.getElementById('result-description');
-            const resultLink = document.getElementById('result-link');
-            const addRestaurantModal = document.getElementById('addRestaurantModal');
-            const addRestaurantBtn = document.getElementById('addRestaurantBtn');
-            const cancelAddBtn = document.getElementById('cancelAddBtn');
-            const addRestaurantForm = document.getElementById('addRestaurantForm');
-            const restaurantCategorySelect = document.getElementById('restaurantCategory');
+<script>
+// Category emojis
+const categoryEmoji = {
+    '麵食': '🍜', '牛肉麵': '🥩', '拉麵': '🍥', '羹麵': '🫕', '義大利麵': '🍝',
+    '鍋燒': '🔥', '飯食': '🍚', '燒臘': '🍖', '咖哩': '🍛', '雞肉飯': '🐔',
+    '健康餐': '🥗', '粥': '🍲', '餃子': '🥟', '火鍋': '🫕', '麻辣燙/關東煮/滷味': '🌶️',
+    '燒烤/炭烤/排餐': '🥩', '炸物/鹹酥雞': '🍗', '異國料理': '🌍',
+    '早餐/早午餐': '🌅', '宵夜': '🌙', '點心': '🍡', '蛋糕': '🎂', '飲料': '🧋'
+};
 
-            let options = [];
-            let arc;
-            let spinTimeout = null;
-            let spinAngleStart;
-            let spinTime = 0;
-            let spinTimeTotal = 0;
-            let isSpinning = false;
-            let currentAngle = 0;
-            const colors = ["#F87171", "#60A5FA", "#34D399", "#FBBF24", "#A78BFA", "#F472B6", "#FB923C", "#2DD4BF"];
+// Wheel colors - rich, vibrant palette
+const COLORS = [
+    ['#f97316','#ea580c'], ['#3b82f6','#2563eb'], ['#22c55e','#16a34a'],
+    ['#f59e0b','#d97706'], ['#8b5cf6','#7c3aed'], ['#ec4899','#db2777'],
+    ['#06b6d4','#0891b2'], ['#84cc16','#65a30d'], ['#ef4444','#dc2626'],
+    ['#a855f7','#9333ea'], ['#14b8a6','#0d9488'], ['#f97316','#ea580c'],
+];
 
-            function populateCategories() {
-                categoryCheckboxesContainer.innerHTML = '';
-                restaurantCategorySelect.innerHTML = '';
-                const selectAllContainer = document.createElement('div');
-                selectAllContainer.className = 'font-bold text-blue-600 dark:text-blue-400';
-                const selectAllCheckbox = document.createElement('input');
-                selectAllCheckbox.type = 'checkbox';
-                selectAllCheckbox.id = 'select-all';
-                selectAllCheckbox.value = 'all';
-                selectAllCheckbox.className = 'custom-checkbox';
-                const selectAllLabel = document.createElement('label');
-                selectAllLabel.htmlFor = 'select-all';
-                selectAllLabel.textContent = '全選';
-                selectAllLabel.className = 'cursor-pointer';
-                selectAllContainer.appendChild(selectAllCheckbox);
-                selectAllContainer.appendChild(selectAllLabel);
-                categoryCheckboxesContainer.appendChild(selectAllContainer);
-                const categories = Object.keys(foodData).sort();
-                categories.forEach(category => {
-                    const categoryContainer = document.createElement('div');
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.id = `cat-${category}`;
-                    checkbox.value = category;
-                    checkbox.className = 'custom-checkbox category-item';
-                    const label = document.createElement('label');
-                    label.htmlFor = `cat-${category}`;
-                    label.textContent = category;
-                    label.className = 'cursor-pointer';
-                    categoryContainer.appendChild(checkbox);
-                    categoryContainer.appendChild(label);
-                    categoryCheckboxesContainer.appendChild(categoryContainer);
-                    const optionElement = document.createElement('option');
-                    optionElement.value = category;
-                    optionElement.textContent = category;
-                    restaurantCategorySelect.appendChild(optionElement);
-                });
+document.addEventListener('DOMContentLoaded', () => {
+    fetch('/api/restaurants')
+        .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(data => initApp(data))
+        .catch(err => {
+            document.getElementById('pills-container').innerHTML =
+                `<p style="color:#f87171;font-size:0.85rem;">載入失敗，請確認 API 是否運作中。</p>`;
+        });
+});
+
+function initApp(foodData) {
+    const canvas = document.getElementById('wheelCanvas');
+    const ctx = canvas.getContext('2d');
+    const spinBtn = document.getElementById('spinButton');
+    const wheelWrapper = document.getElementById('wheelWrapper');
+    const pContainer = document.getElementById('pills-container');
+    const resultCard = document.getElementById('resultCard');
+    const resultEmoji = document.getElementById('result-emoji');
+    const resultLabel = document.getElementById('result-label');
+    const resultName = document.getElementById('result-name');
+    const resultDesc = document.getElementById('result-description');
+    const resultLink = document.getElementById('result-link');
+    const countDisplay = document.getElementById('count-display');
+    const modal = document.getElementById('addRestaurantModal');
+    const catSelect = document.getElementById('restaurantCategory');
+
+    let options = [];
+    let arc = 0;
+    let currentAngle = 0;
+    let isSpinning = false;
+    let rafId = null;
+    let spinTimeTotal = 0;
+    let spinTime = 0;
+    let spinAngleStart = 0;
+    const selectedCategories = new Set();
+
+    // --- Build category pills ---
+    const categories = Object.keys(foodData).sort();
+    pContainer.innerHTML = '';
+
+    const allPill = document.createElement('div');
+    allPill.className = 'pill pill-all';
+    allPill.dataset.cat = '__all__';
+    allPill.textContent = '全選';
+    pContainer.appendChild(allPill);
+
+    categories.forEach(cat => {
+        const pill = document.createElement('div');
+        pill.className = 'pill';
+        pill.dataset.cat = cat;
+        pill.textContent = (categoryEmoji[cat] || '🍽️') + ' ' + cat;
+        pContainer.appendChild(pill);
+
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        catSelect.appendChild(opt);
+    });
+
+    pContainer.addEventListener('click', e => {
+        const pill = e.target.closest('.pill');
+        if (!pill) return;
+        const cat = pill.dataset.cat;
+
+        if (cat === '__all__') {
+            const allSelected = selectedCategories.size === categories.length;
+            if (allSelected) {
+                selectedCategories.clear();
+            } else {
+                categories.forEach(c => selectedCategories.add(c));
             }
+        } else {
+            if (selectedCategories.has(cat)) selectedCategories.delete(cat);
+            else selectedCategories.add(cat);
+        }
+        updatePillStates();
+        updateOptions();
+    });
 
-            function updateOptions() {
-                const selectedCategories = [];
-                document.querySelectorAll('#category-checkboxes .category-item:checked').forEach(checkbox => {
-                    selectedCategories.push(checkbox.value);
-                });
-                options = selectedCategories.flatMap(category => foodData[category] || []);
-                arc = options.length > 0 ? 2 * Math.PI / options.length : 0;
-                drawRouletteWheel();
+    function updatePillStates() {
+        pContainer.querySelectorAll('.pill[data-cat]').forEach(p => {
+            const cat = p.dataset.cat;
+            if (cat === '__all__') {
+                p.classList.toggle('active', selectedCategories.size === categories.length);
+            } else {
+                p.classList.toggle('active', selectedCategories.has(cat));
             }
+        });
+    }
 
-            function drawRouletteWheel() {
-                const logicalWidth = canvas.clientWidth;
-                const logicalHeight = canvas.clientHeight;
-                if (logicalWidth === 0) { return; }
-                const centerX = logicalWidth / 2;
-                const centerY = logicalHeight / 2;
-                const outsideRadius = logicalWidth / 2 * 0.9;
-                const textRadius = outsideRadius * 0.65;
-                ctx.clearRect(0, 0, logicalWidth, logicalHeight);
-                if (options.length === 0) {
-                    ctx.save();
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillStyle = '#6B7280';
-                    let fontSize = Math.max(12, Math.floor(logicalWidth / 20));
-                    ctx.font = `bold ${fontSize}px "Noto Sans TC", sans-serif`;
-                    ctx.fillText('請先選擇分類', centerX, centerY);
-                    ctx.restore();
-                    spinButton.disabled = true;
-                    spinButton.classList.add('opacity-50', 'cursor-not-allowed');
-                    return;
-                }
-                spinButton.disabled = isSpinning;
-                spinButton.classList.toggle('opacity-50', isSpinning);
-                spinButton.classList.toggle('cursor-not-allowed', isSpinning);
-                ctx.strokeStyle = '#FFFFFF';
-                ctx.lineWidth = 2;
-                let fontSize = Math.max(10, Math.floor(logicalWidth / 30));
-                if (options.length > 15) fontSize = Math.max(8, Math.floor(logicalWidth / 35));
-                if (options.length > 30) fontSize = Math.max(6, Math.floor(logicalWidth / 45));
-                ctx.font = `bold ${fontSize}px "Noto Sans TC", sans-serif`;
-                for (let i = 0; i < options.length; i++) {
-                    const angle = currentAngle + i * arc;
-                    ctx.fillStyle = colors[i % colors.length];
-                    ctx.beginPath();
-                    ctx.moveTo(centerX, centerY);
-                    ctx.arc(centerX, centerY, outsideRadius, angle, angle + arc, false);
-                    ctx.closePath();
-                    ctx.fill();
-                    ctx.stroke();
-                    ctx.save();
-                    ctx.fillStyle = "white";
-                    ctx.translate(centerX + Math.cos(angle + arc / 2) * textRadius, centerY + Math.sin(angle + arc / 2) * textRadius);
-                    ctx.rotate(angle + arc / 2 + Math.PI / 2);
-                    let text = options[i].name;
-                    const maxTextLength = Math.floor(textRadius / fontSize) * 1.2;
-                    if (text.length > maxTextLength) {
-                        text = text.substring(0, maxTextLength - 1) + '…';
-                    }
-                    ctx.fillText(text, -ctx.measureText(text).width / 2, fontSize / 2);
-                    ctx.restore();
-                }
-            }
-            
-            function spin() { if (isSpinning || options.length === 0) return; isSpinning = true; spinButton.disabled = true; spinButton.classList.add('opacity-50', 'cursor-not-allowed'); resultDiv.style.opacity = 0; spinAngleStart = Math.random() * 10 + 10; spinTime = 0; spinTimeTotal = Math.random() * 3000 + 4000; rotateWheel(); }
-            function rotateWheel() { spinTime += 30; if (spinTime >= spinTimeTotal) { stopRotateWheel(); return; } const spinAngle = spinAngleStart - easeOut(spinTime, 0, spinAngleStart, spinTimeTotal); currentAngle += (spinAngle * Math.PI / 180); drawRouletteWheel(); spinTimeout = requestAnimationFrame(rotateWheel); }
-            function stopRotateWheel() { cancelAnimationFrame(spinTimeout); const degrees = currentAngle * 180 / Math.PI + 90; const arcd = arc * 180 / Math.PI; const index = Math.floor((360 - degrees % 360) / arcd); const selected = options[index]; if (selected) { resultName.textContent = selected.name; resultDescription.textContent = selected.description; resultLink.href = selected.url; resultLink.classList.toggle('hidden', !selected.url); } resultDiv.style.opacity = 1; isSpinning = false; spinButton.disabled = false; spinButton.classList.remove('opacity-50', 'cursor-not-allowed'); }
-            function easeOut(t, b, c, d) { const ts = (t /= d) * t; const tc = ts * t; return b + c * (tc + -3 * ts + 3 * t); }
-            
-            function resizeCanvas() {
-                const container = canvas.parentElement;
-                const size = container.clientWidth;
-                if (size === 0) return;
-                const dpr = window.devicePixelRatio || 1;
-                canvas.style.width = `${size}px`;
-                canvas.style.height = `${size}px`;
-                canvas.width = size * dpr;
-                canvas.height = size * dpr;
-                ctx.scale(dpr, dpr);
-                drawRouletteWheel();
-            }
+    function updateOptions() {
+        options = [...selectedCategories].flatMap(c => foodData[c] || []);
+        arc = options.length > 0 ? (2 * Math.PI) / options.length : 0;
+        const count = options.length;
+        countDisplay.innerHTML = count > 0
+            ? `已選 <span>${count}</span> 道美食`
+            : '請先選擇分類';
+        drawWheel();
+    }
 
-            function setupEventListeners() {
-                spinButton.addEventListener("click", spin);
-                window.addEventListener('resize', resizeCanvas);
-                
-                // ✨ 修改了顯示和隱藏 modal 的方式 ✨
-                addRestaurantBtn.addEventListener('click', () => {
-                    addRestaurantModal.style.display = 'flex';
-                });
-                cancelAddBtn.addEventListener('click', () => {
-                    addRestaurantModal.style.display = 'none';
-                });
+    // --- Draw wheel ---
+    function drawWheel() {
+        const size = canvas.clientWidth;
+        if (size === 0) return;
+        const dpr = window.devicePixelRatio || 1;
+        const cx = size / 2, cy = size / 2;
+        const R = size / 2 * 0.88;
+        const textR = R * 0.62;
 
-                addRestaurantForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    const newRestaurant = { name: e.target.restaurantName.value, description: e.target.restaurantDescription.value || '我剛推薦的私藏好店！', url: e.target.restaurantUrl.value };
-                    const category = e.target.restaurantCategory.value;
-                    const submitButton = e.target.querySelector('button[type="submit"]');
-                    submitButton.disabled = true;
-                    submitButton.textContent = '送出中...';
-                    fetch('/api/restaurants', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ restaurant: newRestaurant, category: category }),
-                    })
-                    .then(response => {
-                        if (!response.ok) { throw new Error(`伺服器回應錯誤: ${response.statusText}`); }
-                        return response.json();
-                     })
-                    .then(data => {
-                        if (data.success) {
-                            alert(`成功新增餐廳「${newRestaurant.name}」！\n頁面將自動重新整理。`);
-                            window.location.reload();
-                        } else {
-                            throw new Error(data.message || '未知的錯誤');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('API 新增請求錯誤:', error);
-                        alert('新增失敗：' + error.message);
-                        submitButton.disabled = false;
-                        submitButton.textContent = '送出推薦';
-                    });
-                });
-                const selectAllCheckbox = document.getElementById('select-all');
-                selectAllCheckbox.addEventListener('change', () => {
-                    const categoryCheckboxes = document.querySelectorAll('.category-item');
-                    categoryCheckboxes.forEach(checkbox => { checkbox.checked = selectAllCheckbox.checked; });
-                    updateOptions();
-                });
-                categoryCheckboxesContainer.addEventListener('change', (e) => {
-                    if (e.target.classList.contains('category-item')) {
-                        const allChecked = [...document.querySelectorAll('.category-item')].every(checkbox => checkbox.checked);
-                        selectAllCheckbox.checked = allChecked;
-                        updateOptions();
-                    }
-                });
-            }
+        ctx.clearRect(0, 0, size, size);
 
-            // --- 程式進入點 ---
-            populateCategories();
-            setupEventListeners();
-            
-            requestAnimationFrame(() => {
-                updateOptions();
-                resizeCanvas();
-            });
-            
-            resultName.textContent = "今天吃什麼？";
-            resultDescription.textContent = "從上方勾選美食分類，然後點擊「轉！」按鈕！";
-            resultDiv.style.opacity = 1;
+        if (options.length === 0) {
+            // Empty state
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx, cy, R, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.04)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = 'rgba(255,255,255,0.25)';
+            const fs = Math.max(14, size / 22);
+            ctx.font = `600 ${fs}px "Noto Sans TC", sans-serif`;
+            ctx.fillText('請先選擇分類', cx, cy);
+            ctx.restore();
+            spinBtn.disabled = true;
+            return;
+        }
+
+        spinBtn.disabled = isSpinning;
+
+        // Draw segments
+        let fontSize = Math.max(9, Math.floor(size / 28));
+        if (options.length > 20) fontSize = Math.max(7, Math.floor(size / 36));
+        if (options.length > 35) fontSize = Math.max(6, Math.floor(size / 46));
+
+        for (let i = 0; i < options.length; i++) {
+            const startA = currentAngle + i * arc;
+            const endA = startA + arc;
+            const [c1, c2] = COLORS[i % COLORS.length];
+
+            // Fill with gradient
+            const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+            grd.addColorStop(0, c2 + 'cc');
+            grd.addColorStop(1, c1);
+
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, R, startA, endA);
+            ctx.closePath();
+            ctx.fillStyle = grd;
+            ctx.fill();
+
+            // Divider
+            ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+
+        // Outer ring
+        ctx.beginPath();
+        ctx.arc(cx, cy, R, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Text
+        ctx.font = `700 ${fontSize}px "Noto Sans TC", sans-serif`;
+        for (let i = 0; i < options.length; i++) {
+            const midA = currentAngle + i * arc + arc / 2;
+            ctx.save();
+            ctx.translate(
+                cx + Math.cos(midA) * textR,
+                cy + Math.sin(midA) * textR
+            );
+            ctx.rotate(midA + Math.PI / 2);
+
+            let text = options[i].name;
+            const maxLen = Math.max(2, Math.floor(textR / fontSize * 1.1));
+            if (text.length > maxLen) text = text.slice(0, maxLen - 1) + '…';
+
+            // Text shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.4)';
+            ctx.fillText(text, -ctx.measureText(text).width / 2 + 1, fontSize / 2 + 1);
+            ctx.fillStyle = '#fff';
+            ctx.fillText(text, -ctx.measureText(text).width / 2, fontSize / 2);
+            ctx.restore();
+        }
+
+        // Center circle
+        const centerGrd = ctx.createRadialGradient(cx, cy, 0, cx, cy, 36);
+        centerGrd.addColorStop(0, '#fff');
+        centerGrd.addColorStop(1, '#e2e8f0');
+        ctx.beginPath();
+        ctx.arc(cx, cy, 36, 0, Math.PI * 2);
+        ctx.fillStyle = centerGrd;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+
+    // --- Spin logic ---
+    function spin() {
+        if (isSpinning || options.length === 0) return;
+        isSpinning = true;
+        wheelWrapper.classList.add('spinning');
+        resultCard.classList.remove('has-result', 'animating');
+        resultName.className = '';
+        resultDesc.className = '';
+
+        spinAngleStart = Math.random() * 12 + 14;
+        spinTime = 0;
+        spinTimeTotal = Math.random() * 3000 + 4500;
+        rotateWheel();
+    }
+
+    function rotateWheel() {
+        spinTime += 16;
+        if (spinTime >= spinTimeTotal) { stopSpin(); return; }
+        const t = spinTime / spinTimeTotal;
+        const spinAngle = spinAngleStart * (1 - easeOut(t));
+        currentAngle += spinAngle * Math.PI / 180;
+        drawWheel();
+        rafId = requestAnimationFrame(rotateWheel);
+    }
+
+    function stopSpin() {
+        cancelAnimationFrame(rafId);
+        isSpinning = false;
+        wheelWrapper.classList.remove('spinning');
+        spinBtn.disabled = false;
+
+        const deg = (currentAngle * 180 / Math.PI + 90) % 360;
+        const segDeg = arc * 180 / Math.PI;
+        const idx = Math.floor(((360 - deg % 360) % 360) / segDeg) % options.length;
+        const selected = options[idx];
+
+        if (selected) showResult(selected);
+    }
+
+    function easeOut(t) {
+        return 1 - Math.pow(1 - t, 3);
+    }
+
+    // --- Show result ---
+    function showResult(item) {
+        const cat = [...selectedCategories].find(c =>
+            (foodData[c] || []).some(r => r.name === item.name)
+        );
+        const emoji = cat ? (categoryEmoji[cat] || '🍽️') : '🍽️';
+
+        resultEmoji.textContent = emoji;
+        resultLabel.textContent = '命定美食出爐！';
+        resultName.textContent = item.name;
+        resultName.className = '';
+        resultDesc.textContent = item.description || '去吃吧！';
+        resultDesc.className = '';
+
+        if (item.url) {
+            resultLink.href = item.url;
+            resultLink.classList.remove('hidden');
+        } else {
             resultLink.classList.add('hidden');
         }
+
+        resultCard.classList.add('has-result');
+        // Trigger animation
+        void resultCard.offsetWidth;
+        resultCard.classList.add('animating');
+
+        spawnConfetti();
+
+        // On mobile scroll to result
+        if (window.innerWidth < 768) {
+            setTimeout(() => resultCard.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+        }
+    }
+
+    // --- Confetti ---
+    function spawnConfetti() {
+        const colors = ['#f97316','#f59e0b','#22c55e','#3b82f6','#8b5cf6','#ec4899','#06b6d4'];
+        const rect = resultCard.getBoundingClientRect();
+        for (let i = 0; i < 18; i++) {
+            const el = document.createElement('div');
+            el.className = 'confetti-piece';
+            el.style.cssText = `
+                left: ${Math.random() * 100}%;
+                top: 0;
+                background: ${colors[i % colors.length]};
+                --tx: ${(Math.random() - 0.5) * 120}px;
+                --rot: ${Math.random() * 720}deg;
+                border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+                animation-delay: ${Math.random() * 0.3}s;
+                animation-duration: ${0.6 + Math.random() * 0.4}s;
+            `;
+            resultCard.appendChild(el);
+            setTimeout(() => el.remove(), 1200);
+        }
+    }
+
+    // --- Canvas sizing ---
+    function resizeCanvas() {
+        const container = canvas.parentElement;
+        const size = Math.min(container.clientWidth, 500);
+        if (size === 0) return;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.style.width = `${size}px`;
+        canvas.style.height = `${size}px`;
+        canvas.width = size * dpr;
+        canvas.height = size * dpr;
+        ctx.scale(dpr, dpr);
+        drawWheel();
+    }
+
+    // --- Modal ---
+    function openModal() { modal.classList.add('open'); }
+    function closeModal() { modal.classList.remove('open'); }
+
+    document.getElementById('addRestaurantBtn').addEventListener('click', openModal);
+    document.getElementById('cancelAddBtn').addEventListener('click', closeModal);
+    document.getElementById('cancelAddBtn2').addEventListener('click', closeModal);
+    modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+    document.getElementById('addRestaurantForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const restaurant = {
+            name: e.target.restaurantName.value.trim(),
+            description: e.target.restaurantDescription.value.trim() || '私藏好店！',
+            url: e.target.restaurantUrl.value.trim()
+        };
+        const category = e.target.restaurantCategory.value;
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = '送出中…';
+
+        fetch('/api/restaurants', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ restaurant, category })
+        })
+        .then(r => { if (!r.ok) throw new Error(r.statusText); return r.json(); })
+        .then(data => {
+            if (data.success) {
+                alert(`成功新增「${restaurant.name}」！頁面將重新整理。`);
+                window.location.reload();
+            } else throw new Error(data.message || '未知錯誤');
+        })
+        .catch(err => {
+            alert('新增失敗：' + err.message);
+            submitBtn.disabled = false;
+            submitBtn.textContent = '送出推薦';
+        });
     });
-    </script>
+
+    // --- Init ---
+    spinBtn.addEventListener('click', spin);
+    window.addEventListener('resize', resizeCanvas);
+
+    requestAnimationFrame(() => {
+        resizeCanvas();
+        updateOptions();
+    });
+}
+</script>
 </body>
 </html>
